@@ -1,0 +1,9 @@
+class: OrderEvent
+table: order_event
+fields:
+  orderNumber: String
+  type: String
+  actorType: String
+  actorId: String?
+  payload: String?
+  timestamp: DateTime

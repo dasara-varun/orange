@@ -1,0 +1,9 @@
+class: RefundRecord
+table: refund_record
+fields:
+  orderNumber: String
+  amountPaise: int
+  reason: String
+  status: String
+  providerReference: String?
+  createdAt: DateTime

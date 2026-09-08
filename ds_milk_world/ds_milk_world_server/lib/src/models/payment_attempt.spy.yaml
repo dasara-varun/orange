@@ -1,0 +1,11 @@
+class: PaymentAttempt
+table: payment_attempt
+fields:
+  orderNumber: String
+  provider: String
+  externalId: String
+  amountPaise: int
+  status: String
+  paymentMethod: String?
+  rawReference: String?
+  createdAt: DateTime

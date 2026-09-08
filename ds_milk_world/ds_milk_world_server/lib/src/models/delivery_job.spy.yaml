@@ -1,0 +1,14 @@
+class: DeliveryJob
+table: delivery_job
+fields:
+  orderNumber: String
+  provider: String
+  externalId: String?
+  quotePaise: int
+  status: String
+  trackingUrl: String?
+  riderName: String?
+  riderPhone: String?
+  manualFallback: bool
+  notes: String?
+  updatedAt: DateTime

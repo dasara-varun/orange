@@ -1,0 +1,6 @@
+class: DeliveryQuote
+fields:
+  serviceable: bool
+  distanceKm: double
+  feePaise: int
+  message: String?

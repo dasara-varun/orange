@@ -1,0 +1,5 @@
+class: StoreCatalog
+fields:
+  outlet: Outlet
+  categories: List<Category>
+  products: List<Product>

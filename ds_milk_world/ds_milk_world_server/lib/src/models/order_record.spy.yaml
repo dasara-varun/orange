@@ -1,0 +1,22 @@
+class: OrderRecord
+table: order_record
+fields:
+  orderNumber: String
+  customerPhone: String
+  customerName: String?
+  deliveryAddress: String
+  landmark: String?
+  latitude: double
+  longitude: double
+  distanceKm: double
+  status: String
+  subtotalPaise: int
+  deliveryFeePaise: int
+  totalPaise: int
+  currency: String
+  items: List<OrderItem>
+  prepTimeMinutes: int?
+  rejectionReason: String?
+  packingChecklistConfirmed: bool
+  createdAt: DateTime
+  updatedAt: DateTime

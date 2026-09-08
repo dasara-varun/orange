@@ -1,0 +1,14 @@
+class: Product
+table: product
+fields:
+  categoryName: String
+  sku: String
+  name: String
+  shortDescription: String?
+  sizeOrServing: String?
+  pricePaise: int
+  offerPricePaise: int?
+  availability: bool
+  customisable: bool
+  vegetarian: bool
+  sortOrder: int

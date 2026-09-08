@@ -1,0 +1,14 @@
+class: Outlet
+table: outlet
+fields:
+  name: String
+  phone: String
+  address: String
+  latitude: double
+  longitude: double
+  status: String
+  serviceRadiusM: int
+  timezone: String
+  openingTime: String
+  closingTime: String
+  minOrderPaise: int

@@ -1,0 +1,9 @@
+class: OrderItem
+table: order_item
+fields:
+  productSku: String
+  nameSnapshot: String
+  unitPricePaise: int
+  quantity: int
+  optionsSnapshot: String?
+  subtotalPaise: int
