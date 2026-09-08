@@ -56,9 +56,25 @@ Strictly aligned with `docs/UX-AND-DESIGN.md` and `taste-skill`:
 - **Ink (`#1E1B19`)**: High-contrast labels
 - **Error (`#B63A3A`)**: Destructive and rejection alerts
 
+### UI Previews & Showcase
+
+| Customer Storefront | Staff Operations Console |
+| :---: | :---: |
+| ![Storefront](docs/images/storefront_preview.jpg) | ![Staff Console](docs/images/staff_console_preview.jpg) |
+
+| Live Vertical Order Tracking |
+| :---: |
+| ![Order Tracking](docs/images/order_tracking_preview.jpg) |
+
 ---
 
-## 🚀 Getting Started
+## 📖 Installation & Deployment Guide
+
+For full step-by-step instructions (Docker 1-click install, bare-metal local dev, database migrations, and ports), please read [INSTALLATION.md](INSTALLATION.md).
+
+---
+
+## 🚀 Quick Start
 
 ### Prerequisites
 - **Flutter SDK**: `>= 3.24.0` (Included at `E:\flutter\bin`)

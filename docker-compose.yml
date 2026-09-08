@@ -39,8 +39,8 @@ services:
   # Flutter Customer Storefront & Staff Operations Web App
   web:
     build:
-      context: ./ds_milk_world/ds_milk_world_flutter
-      dockerfile: Dockerfile
+      context: ./ds_milk_world
+      dockerfile: ./ds_milk_world_flutter/Dockerfile
     restart: unless-stopped
     ports:
       - "3000:80"
