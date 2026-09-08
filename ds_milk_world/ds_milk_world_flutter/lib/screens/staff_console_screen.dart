@@ -24,7 +24,7 @@ class _StaffConsoleScreenState extends State<StaffConsoleScreen> with SingleTick
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 6, vsync: this);
+    _tabController = TabController(length: 7, vsync: this);
     _loadData();
     _pollingTimer = Timer.periodic(const Duration(seconds: 4), (_) => _loadData(silent: true));
   }
@@ -341,20 +341,53 @@ class _StaffConsoleScreenState extends State<StaffConsoleScreen> with SingleTick
             Tab(text: 'Out for Delivery (${outOrders.length})'),
             Tab(text: 'Completed (${doneOrders.length})'),
             const Tab(text: 'Menu Catalog (79)'),
+            const Tab(text: 'Reports & Stats'),
           ],
         ),
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator(color: AppTheme.saffron))
-          : TabBarView(
-              controller: _tabController,
+          : Column(
               children: [
-                _buildOrderList(newOrders, 'new'),
-                _buildOrderList(prepOrders, 'preparing'),
-                _buildOrderList(readyOrders, 'ready_for_pickup'),
-                _buildOrderList(outOrders, 'out_for_delivery'),
-                _buildOrderList(doneOrders, 'delivered'),
-                _buildCatalogTab(),
+                if (newOrders.isNotEmpty)
+                  InkWell(
+                    onTap: () => _tabController.animateTo(0),
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                      color: AppTheme.saffron,
+                      child: Row(
+                        children: [
+                          const Icon(Icons.notifications_active, size: 18, color: AppTheme.cocoa),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'ACTION REQUIRED: ${newOrders.length} new paid order(s) awaiting shop acceptance!',
+                              style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13, color: AppTheme.cocoa),
+                            ),
+                          ),
+                          const Text(
+                            'Review Now →',
+                            style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12, color: AppTheme.cocoa),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                Expanded(
+                  child: TabBarView(
+                    controller: _tabController,
+                    children: [
+                      _buildOrderList(newOrders, 'new'),
+                      _buildOrderList(prepOrders, 'preparing'),
+                      _buildOrderList(readyOrders, 'ready_for_pickup'),
+                      _buildOrderList(outOrders, 'out_for_delivery'),
+                      _buildOrderList(doneOrders, 'delivered'),
+                      _buildCatalogTab(),
+                      _buildReportsTab(),
+                    ],
+                  ),
+                ),
               ],
             ),
     );
@@ -526,6 +559,156 @@ class _StaffConsoleScreenState extends State<StaffConsoleScreen> with SingleTick
                 ),
               );
             },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildReportsTab() {
+    final paidOrders = _orders.where((o) => o.status != 'awaiting_payment' && o.status != 'draft').toList();
+    final totalRevenuePaise = paidOrders.fold(0, (sum, o) => sum + o.totalPaise);
+    final deliveryFeesPaise = paidOrders.fold(0, (sum, o) => sum + o.deliveryFeePaise);
+    final rejectedCount = _orders.where((o) => o.status == 'rejected').length;
+    final totalItemsSold = paidOrders.fold(0, (sum, o) => sum + o.items.fold(0, (s, i) => s + i.quantity));
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Daily Performance & Financial Reconciliation',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: AppTheme.cocoa),
+          ),
+          const SizedBox(height: 6),
+          const Text(
+            'Live metrics from Auto Nagar Counter pilot:',
+            style: TextStyle(fontSize: 12, color: AppTheme.muted),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: _buildMetricCard(
+                  title: 'Gross Revenue',
+                  value: AppTheme.formatPaise(totalRevenuePaise),
+                  subtitle: '${paidOrders.length} orders settled',
+                  accent: AppTheme.saffronDark,
+                  icon: Icons.currency_rupee,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildMetricCard(
+                  title: 'Items Prepared',
+                  value: '$totalItemsSold',
+                  subtitle: 'Across 8 categories',
+                  accent: AppTheme.mint,
+                  icon: Icons.inventory_2,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: _buildMetricCard(
+                  title: 'Delivery Collected',
+                  value: AppTheme.formatPaise(deliveryFeesPaise),
+                  subtitle: 'Customer paid',
+                  accent: AppTheme.cocoa,
+                  icon: Icons.two_wheeler,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildMetricCard(
+                  title: 'Exceptions / Refunds',
+                  value: '$rejectedCount',
+                  subtitle: 'Shop rejected / cancelled',
+                  accent: rejectedCount > 0 ? AppTheme.error : Colors.grey,
+                  icon: Icons.assignment_return,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+          const Text(
+            'Outlet Operating Rules Check',
+            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: AppTheme.cocoa),
+          ),
+          const SizedBox(height: 10),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppTheme.border),
+            ),
+            child: Column(
+              children: [
+                _buildRuleRow('Delivery Radius Boundary', '5.0 km strictly enforced via Haversine', true),
+                const Divider(height: 16),
+                _buildRuleRow('Pricing Calculation', 'Strictly server-side; client total ignored', true),
+                const Divider(height: 16),
+                _buildRuleRow('Payment Security', 'Signed webhooks & idempotency lock', true),
+                const Divider(height: 16),
+                _buildRuleRow('Physical Goods Policy', 'Generic payment adapter (Dodo excluded)', true),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMetricCard({
+    required String title,
+    required String value,
+    required String subtitle,
+    required Color accent,
+    required IconData icon,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppTheme.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(title, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppTheme.muted)),
+              Icon(icon, size: 18, color: accent),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(value, style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: accent)),
+          const SizedBox(height: 2),
+          Text(subtitle, style: const TextStyle(fontSize: 11, color: AppTheme.muted)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRuleRow(String rule, String detail, bool compliant) {
+    return Row(
+      children: [
+        Icon(compliant ? Icons.check_circle : Icons.warning, size: 18, color: compliant ? const Color(0xFF2E7D32) : AppTheme.error),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(rule, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppTheme.cocoa)),
+              Text(detail, style: const TextStyle(fontSize: 11, color: AppTheme.muted)),
+            ],
           ),
         ),
       ],

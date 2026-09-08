@@ -7,6 +7,7 @@ import '../widgets/category_rail.dart';
 import '../widgets/product_card.dart';
 import '../widgets/cart_drawer.dart';
 import 'staff_console_screen.dart';
+import 'order_history_screen.dart';
 
 class StorefrontScreen extends StatefulWidget {
   const StorefrontScreen({super.key});
@@ -75,6 +76,10 @@ class _StorefrontScreenState extends State<StorefrontScreen> {
             OutletHeader(
               onSearchChanged: (val) => setState(() => _searchQuery = val),
               onToggleStaffMode: () => setState(() => _isStaffMode = !_isStaffMode),
+              onOpenHistory: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const OrderHistoryScreen()),
+              ),
               isStaffMode: _isStaffMode,
             ),
             // Category Rail

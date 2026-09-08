@@ -4,12 +4,14 @@ import '../theme/app_theme.dart';
 class OutletHeader extends StatelessWidget {
   final ValueChanged<String>? onSearchChanged;
   final VoidCallback? onToggleStaffMode;
+  final VoidCallback? onOpenHistory;
   final bool isStaffMode;
 
   const OutletHeader({
     super.key,
     this.onSearchChanged,
     this.onToggleStaffMode,
+    this.onOpenHistory,
     this.isStaffMode = false,
   });
 
@@ -84,23 +86,33 @@ class OutletHeader extends StatelessWidget {
                   ),
                 ],
               ),
-              // Switch between Customer and Staff operations
-              OutlinedButton.icon(
-                onPressed: onToggleStaffMode,
-                icon: Icon(
-                  isStaffMode ? Icons.storefront : Icons.admin_panel_settings,
-                  size: 16,
-                  color: AppTheme.cocoa,
-                ),
-                label: Text(
-                  isStaffMode ? 'Storefront' : 'Staff Ops',
-                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
-                ),
-                style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                  side: const BorderSide(color: AppTheme.border),
-                  backgroundColor: isStaffMode ? AppTheme.cream : Colors.white,
-                ),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (!isStaffMode && onOpenHistory != null)
+                    IconButton(
+                      icon: const Icon(Icons.receipt_long_outlined, size: 20, color: AppTheme.cocoa),
+                      tooltip: 'My Past Orders',
+                      onPressed: onOpenHistory,
+                    ),
+                  OutlinedButton.icon(
+                    onPressed: onToggleStaffMode,
+                    icon: Icon(
+                      isStaffMode ? Icons.storefront : Icons.admin_panel_settings,
+                      size: 16,
+                      color: AppTheme.cocoa,
+                    ),
+                    label: Text(
+                      isStaffMode ? 'Storefront' : 'Staff Ops',
+                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                      side: const BorderSide(color: AppTheme.border),
+                      backgroundColor: isStaffMode ? AppTheme.cream : Colors.white,
+                    ),
+                  ),
+                ],
               ),
             ],
           ),

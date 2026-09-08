@@ -1,8 +1,10 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ds_milk_world_client/ds_milk_world_client.dart';
 import 'package:ds_milk_world_flutter/main.dart';
 import 'package:ds_milk_world_flutter/state/cart_state.dart';
 import 'package:ds_milk_world_flutter/services/mock_data.dart';
+import 'package:ds_milk_world_flutter/screens/order_history_screen.dart';
 
 void main() {
   setUpAll(() {
@@ -72,6 +74,14 @@ void main() {
       // Floating Cart bar should appear
       expect(find.textContaining('1 item'), findsOneWidget);
       expect(find.text('View Cart'), findsOneWidget);
+    });
+
+    testWidgets('Opens Order History screen and displays empty state or orders', (WidgetTester tester) async {
+      await tester.pumpWidget(const MaterialApp(home: OrderHistoryScreen()));
+      await tester.pumpAndSettle();
+
+      expect(find.text('My Past Orders'), findsOneWidget);
+      expect(find.text('Start Ordering'), findsOneWidget);
     });
   });
 }

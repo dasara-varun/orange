@@ -1,0 +1,59 @@
+name: DS Milk World CI/CD
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  server_test:
+    name: Backend Server Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Dart
+        uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+
+      - name: Install dependencies (Server)
+        working-directory: ds_milk_world/ds_milk_world_server
+        run: dart pub get
+
+      - name: Run Server Lifecycle & Contract Tests
+        working-directory: ds_milk_world/ds_milk_world_server
+        run: dart test test/order_lifecycle_test.dart
+
+  flutter_test:
+    name: Flutter Storefront & Staff App Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.29.0'
+          channel: 'stable'
+
+      - name: Install Client dependencies
+        working-directory: ds_milk_world/ds_milk_world_client
+        run: flutter pub get
+
+      - name: Install Flutter dependencies
+        working-directory: ds_milk_world/ds_milk_world_flutter
+        run: flutter pub get
+
+      - name: Run Static Analysis
+        working-directory: ds_milk_world/ds_milk_world_flutter
+        run: flutter analyze
+
+      - name: Run Flutter Widget Tests
+        working-directory: ds_milk_world/ds_milk_world_flutter
+        run: flutter test
+
+      - name: Build Web Release Bundle
+        working-directory: ds_milk_world/ds_milk_world_flutter
+        run: flutter build web --release
