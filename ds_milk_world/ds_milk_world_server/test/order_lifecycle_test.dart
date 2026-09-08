@@ -272,5 +272,129 @@ void main() {
       expect(refunds[0].amountPaise, equals(order.totalPaise));
       expect(refunds[0].status, equals('completed'));
     });
+
+    test('Customer cancellation before prep triggers auto-refund and blocks late cancellation', () {
+      final order = OrderService.createOrder(
+        customerPhone: '+91 9900011223',
+        customerName: 'Pooja',
+        deliveryAddress: 'Road 2, Auto Nagar',
+        latitude: 16.4955,
+        longitude: 80.6655,
+        requestedItems: [
+          OrderItem(
+            productSku: 'DSMW-002',
+            nameSnapshot: 'Rose Falooda',
+            unitPricePaise: 13000,
+            quantity: 1,
+            subtotalPaise: 13000,
+          ),
+        ],
+      );
+
+      // Pay order
+      final attempt = OrderService.createCheckoutSession(
+        orderNumber: order.orderNumber,
+        paymentMethod: 'UPI_QR',
+      );
+      OrderService.handlePaymentWebhook(
+        provider: 'generic_simulator',
+        externalId: attempt.externalId,
+        orderNumber: order.orderNumber,
+        status: 'successful',
+        amountPaise: order.totalPaise,
+      );
+
+      // Cancel before shop accepts
+      final cancelled = OrderService.cancelOrder(
+        orderNumber: order.orderNumber,
+        reason: 'Change of mind',
+        actorType: 'customer',
+      );
+      expect(cancelled.status, equals('rejected'));
+      expect(cancelled.rejectionReason, contains('Change of mind'));
+
+      final refunds = OrderService.getRefunds(order.orderNumber);
+      expect(refunds.length, equals(1));
+      expect(refunds[0].amountPaise, equals(order.totalPaise));
+
+      // Attempting to cancel an order already preparing throws StateError
+      final order2 = OrderService.createOrder(
+        customerPhone: '+91 9900011224',
+        deliveryAddress: 'Road 3, Auto Nagar',
+        latitude: 16.4955,
+        longitude: 80.6655,
+        requestedItems: [
+          OrderItem(
+            productSku: 'DSMW-002',
+            nameSnapshot: 'Rose Falooda',
+            unitPricePaise: 13000,
+            quantity: 1,
+            subtotalPaise: 13000,
+          ),
+        ],
+      );
+      final attempt2 = OrderService.createCheckoutSession(
+        orderNumber: order2.orderNumber,
+        paymentMethod: 'CARD',
+      );
+      OrderService.handlePaymentWebhook(
+        provider: 'generic_simulator',
+        externalId: attempt2.externalId,
+        orderNumber: order2.orderNumber,
+        status: 'successful',
+        amountPaise: order2.totalPaise,
+      );
+      OrderService.acceptOrder(orderNumber: order2.orderNumber, prepTimeMinutes: 15);
+      expect(
+        () => OrderService.cancelOrder(
+          orderNumber: order2.orderNumber,
+          reason: 'Too late',
+        ),
+        throwsStateError,
+      );
+    });
+
+    test('Delivery webhook updates rider details and transitions order status', () {
+      final order = OrderService.createOrder(
+        customerPhone: '+91 9888877777',
+        deliveryAddress: 'Plot 10, Auto Nagar',
+        latitude: 16.4960,
+        longitude: 80.6660,
+        requestedItems: [
+          OrderItem(
+            productSku: 'DSMW-004',
+            nameSnapshot: 'Fruit Falooda',
+            unitPricePaise: 14000,
+            quantity: 1,
+            subtotalPaise: 14000,
+          ),
+        ],
+      );
+
+      final success = OrderService.handleDeliveryWebhook(
+        orderNumber: order.orderNumber,
+        provider: 'Rapido Delivery',
+        eventType: 'picked_up',
+        riderName: 'Mahesh K',
+        riderPhone: '+91 9876543210',
+        trackingUrl: 'https://track.example.com/del-456',
+      );
+
+      expect(success, isTrue);
+      final updatedOrder = OrderService.getOrder(order.orderNumber)!;
+      expect(updatedOrder.status, equals('out_for_delivery'));
+
+      final job = OrderService.getDeliveryJob(order.orderNumber)!;
+      expect(job.riderName, equals('Mahesh K'));
+      expect(job.status, equals('picked_up'));
+
+      // Webhook delivers order
+      OrderService.handleDeliveryWebhook(
+        orderNumber: order.orderNumber,
+        provider: 'Rapido Delivery',
+        eventType: 'delivered',
+      );
+      expect(OrderService.getOrder(order.orderNumber)!.status, equals('delivered'));
+    });
   });
 }

@@ -76,6 +76,43 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
     }
   }
 
+  void _showCancelOrderDialog(String orderNumber) {
+    final reasonCtrl = TextEditingController(text: 'Customer requested cancellation');
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Cancel Order?'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Orders can be cancelled before kitchen preparation starts. 100% of your paid amount will be refunded immediately.',
+              style: TextStyle(fontSize: 12, color: AppTheme.muted),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: reasonCtrl,
+              decoration: const InputDecoration(labelText: 'Reason for cancellation'),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Keep Order')),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.error, foregroundColor: Colors.white),
+            onPressed: () async {
+              Navigator.pop(ctx);
+              await ApiService.instance.cancelOrder(orderNumber, reasonCtrl.text.trim());
+              _fetchOrder();
+            },
+            child: const Text('Confirm Cancel'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
@@ -421,6 +458,20 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                 ],
               ),
             ),
+            if (currentStep <= 1 && !isRejected) ...[
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: () => _showCancelOrderDialog(order.orderNumber),
+                  icon: const Icon(Icons.cancel_outlined, size: 16, color: AppTheme.error),
+                  label: const Text('Cancel Order (Full Refund)', style: TextStyle(color: AppTheme.error, fontSize: 13)),
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: AppTheme.error),
+                  ),
+                ),
+              ),
+            ],
             const SizedBox(height: 20),
 
             SizedBox(

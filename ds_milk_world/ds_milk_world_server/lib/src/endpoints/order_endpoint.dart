@@ -31,4 +31,16 @@ class OrderEndpoint extends Endpoint {
   Future<List<OrderRecord>> listActiveOrders(Session session) async {
     return OrderService.listActiveOrders();
   }
+
+  Future<OrderRecord?> cancelOrder(
+    Session session,
+    String orderNumber,
+    String reason,
+  ) async {
+    return OrderService.cancelOrder(
+      orderNumber: orderNumber,
+      reason: reason,
+      actorType: 'customer',
+    );
+  }
 }

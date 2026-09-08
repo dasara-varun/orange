@@ -1,6 +1,4 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:serverpod_flutter/serverpod_flutter.dart';
 import 'package:ds_milk_world_client/ds_milk_world_client.dart';
 import 'package:ds_milk_world_flutter/main.dart';
 import 'package:ds_milk_world_flutter/state/cart_state.dart';

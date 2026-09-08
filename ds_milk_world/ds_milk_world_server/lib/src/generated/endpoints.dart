@@ -13,10 +13,11 @@ import 'package:serverpod/serverpod.dart' as _i1;
 import '../endpoints/admin_endpoint.dart' as _i2;
 import '../endpoints/catalog_endpoint.dart' as _i3;
 import '../endpoints/checkout_endpoint.dart' as _i4;
-import '../endpoints/order_endpoint.dart' as _i5;
-import '../endpoints/payment_webhook_endpoint.dart' as _i6;
-import '../endpoints/quote_endpoint.dart' as _i7;
-import 'package:ds_milk_world_server/src/generated/order_item.dart' as _i8;
+import '../endpoints/delivery_webhook_endpoint.dart' as _i5;
+import '../endpoints/order_endpoint.dart' as _i6;
+import '../endpoints/payment_webhook_endpoint.dart' as _i7;
+import '../endpoints/quote_endpoint.dart' as _i8;
+import 'package:ds_milk_world_server/src/generated/order_item.dart' as _i9;
 
 class Endpoints extends _i1.EndpointDispatch {
   @override
@@ -40,19 +41,25 @@ class Endpoints extends _i1.EndpointDispatch {
           'checkout',
           null,
         ),
-      'order': _i5.OrderEndpoint()
+      'deliveryWebhook': _i5.DeliveryWebhookEndpoint()
+        ..initialize(
+          server,
+          'deliveryWebhook',
+          null,
+        ),
+      'order': _i6.OrderEndpoint()
         ..initialize(
           server,
           'order',
           null,
         ),
-      'paymentWebhook': _i6.PaymentWebhookEndpoint()
+      'paymentWebhook': _i7.PaymentWebhookEndpoint()
         ..initialize(
           server,
           'paymentWebhook',
           null,
         ),
-      'quote': _i7.QuoteEndpoint()
+      'quote': _i8.QuoteEndpoint()
         ..initialize(
           server,
           'quote',
@@ -358,6 +365,67 @@ class Endpoints extends _i1.EndpointDispatch {
         )
       },
     );
+    connectors['deliveryWebhook'] = _i1.EndpointConnector(
+      name: 'deliveryWebhook',
+      endpoint: endpoints['deliveryWebhook']!,
+      methodConnectors: {
+        'processWebhook': _i1.MethodConnector(
+          name: 'processWebhook',
+          params: {
+            'provider': _i1.ParameterDescription(
+              name: 'provider',
+              type: _i1.getType<String>(),
+              nullable: false,
+            ),
+            'orderNumber': _i1.ParameterDescription(
+              name: 'orderNumber',
+              type: _i1.getType<String>(),
+              nullable: false,
+            ),
+            'eventType': _i1.ParameterDescription(
+              name: 'eventType',
+              type: _i1.getType<String>(),
+              nullable: false,
+            ),
+            'riderName': _i1.ParameterDescription(
+              name: 'riderName',
+              type: _i1.getType<String?>(),
+              nullable: true,
+            ),
+            'riderPhone': _i1.ParameterDescription(
+              name: 'riderPhone',
+              type: _i1.getType<String?>(),
+              nullable: true,
+            ),
+            'trackingUrl': _i1.ParameterDescription(
+              name: 'trackingUrl',
+              type: _i1.getType<String?>(),
+              nullable: true,
+            ),
+            'signature': _i1.ParameterDescription(
+              name: 'signature',
+              type: _i1.getType<String?>(),
+              nullable: true,
+            ),
+          },
+          call: (
+            _i1.Session session,
+            Map<String, dynamic> params,
+          ) async =>
+              (endpoints['deliveryWebhook'] as _i5.DeliveryWebhookEndpoint)
+                  .processWebhook(
+            session,
+            params['provider'],
+            params['orderNumber'],
+            params['eventType'],
+            params['riderName'],
+            params['riderPhone'],
+            params['trackingUrl'],
+            params['signature'],
+          ),
+        )
+      },
+    );
     connectors['order'] = _i1.EndpointConnector(
       name: 'order',
       endpoint: endpoints['order']!,
@@ -397,7 +465,7 @@ class Endpoints extends _i1.EndpointDispatch {
             ),
             'items': _i1.ParameterDescription(
               name: 'items',
-              type: _i1.getType<List<_i8.OrderItem>>(),
+              type: _i1.getType<List<_i9.OrderItem>>(),
               nullable: false,
             ),
           },
@@ -405,7 +473,7 @@ class Endpoints extends _i1.EndpointDispatch {
             _i1.Session session,
             Map<String, dynamic> params,
           ) async =>
-              (endpoints['order'] as _i5.OrderEndpoint).createOrder(
+              (endpoints['order'] as _i6.OrderEndpoint).createOrder(
             session,
             params['customerPhone'],
             params['customerName'],
@@ -429,7 +497,7 @@ class Endpoints extends _i1.EndpointDispatch {
             _i1.Session session,
             Map<String, dynamic> params,
           ) async =>
-              (endpoints['order'] as _i5.OrderEndpoint).getOrder(
+              (endpoints['order'] as _i6.OrderEndpoint).getOrder(
             session,
             params['orderNumber'],
           ),
@@ -441,8 +509,32 @@ class Endpoints extends _i1.EndpointDispatch {
             _i1.Session session,
             Map<String, dynamic> params,
           ) async =>
-              (endpoints['order'] as _i5.OrderEndpoint)
+              (endpoints['order'] as _i6.OrderEndpoint)
                   .listActiveOrders(session),
+        ),
+        'cancelOrder': _i1.MethodConnector(
+          name: 'cancelOrder',
+          params: {
+            'orderNumber': _i1.ParameterDescription(
+              name: 'orderNumber',
+              type: _i1.getType<String>(),
+              nullable: false,
+            ),
+            'reason': _i1.ParameterDescription(
+              name: 'reason',
+              type: _i1.getType<String>(),
+              nullable: false,
+            ),
+          },
+          call: (
+            _i1.Session session,
+            Map<String, dynamic> params,
+          ) async =>
+              (endpoints['order'] as _i6.OrderEndpoint).cancelOrder(
+            session,
+            params['orderNumber'],
+            params['reason'],
+          ),
         ),
       },
     );
@@ -488,7 +580,7 @@ class Endpoints extends _i1.EndpointDispatch {
             _i1.Session session,
             Map<String, dynamic> params,
           ) async =>
-              (endpoints['paymentWebhook'] as _i6.PaymentWebhookEndpoint)
+              (endpoints['paymentWebhook'] as _i7.PaymentWebhookEndpoint)
                   .processWebhook(
             session,
             params['provider'],
@@ -523,7 +615,7 @@ class Endpoints extends _i1.EndpointDispatch {
             _i1.Session session,
             Map<String, dynamic> params,
           ) async =>
-              (endpoints['quote'] as _i7.QuoteEndpoint).getDeliveryQuote(
+              (endpoints['quote'] as _i8.QuoteEndpoint).getDeliveryQuote(
             session,
             params['latitude'],
             params['longitude'],

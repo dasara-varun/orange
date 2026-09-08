@@ -429,6 +429,102 @@ class OrderService {
     return refund;
   }
 
+  /// Cancel order subject to policy (allowed before food prep begins)
+  static OrderRecord cancelOrder({
+    required String orderNumber,
+    required String reason,
+    String actorType = 'customer',
+  }) {
+    final order = _orders[orderNumber];
+    if (order == null) throw ArgumentError('Order $orderNumber not found');
+
+    if (order.status == 'preparing' ||
+        order.status == 'ready_for_pickup' ||
+        order.status == 'out_for_delivery' ||
+        order.status == 'delivered') {
+      throw StateError('Order is already in "${order.status}" stage; cannot cancel after kitchen has started.');
+    }
+
+    final previousStatus = order.status;
+    order.status = 'rejected';
+    order.rejectionReason = 'Cancelled ($actorType): $reason';
+    order.updatedAt = DateTime.now();
+
+    // If order was already paid, issue refund
+    if (previousStatus == 'shop_acceptance_pending' || previousStatus == 'paid') {
+      final refund = RefundRecord(
+        orderNumber: orderNumber,
+        amountPaise: order.totalPaise,
+        reason: 'Order cancelled before prep: $reason',
+        status: 'completed',
+        providerReference: 'REF-${DateTime.now().millisecondsSinceEpoch}',
+        createdAt: DateTime.now(),
+      );
+      _refunds.putIfAbsent(orderNumber, () => []).add(refund);
+    }
+
+    _logEvent(
+      orderNumber: orderNumber,
+      type: 'order_cancelled',
+      actorType: actorType,
+      payload: 'Cancelled ($actorType). Reason: $reason',
+    );
+
+    return order;
+  }
+
+  /// Process incoming delivery webhook event (rider assigned, picked up, delivered, failed)
+  static bool handleDeliveryWebhook({
+    required String orderNumber,
+    required String provider,
+    required String eventType,
+    String? riderName,
+    String? riderPhone,
+    String? trackingUrl,
+  }) {
+    final order = _orders[orderNumber];
+    if (order == null) return false;
+
+    var job = _deliveryJobs[orderNumber];
+    if (job == null) {
+      job = DeliveryJob(
+        orderNumber: orderNumber,
+        provider: provider,
+        quotePaise: order.deliveryFeePaise,
+        status: eventType,
+        riderName: riderName,
+        riderPhone: riderPhone,
+        trackingUrl: trackingUrl,
+        manualFallback: false,
+        updatedAt: DateTime.now(),
+      );
+      _deliveryJobs[orderNumber] = job;
+    } else {
+      job.status = eventType;
+      if (riderName != null) job.riderName = riderName;
+      if (riderPhone != null) job.riderPhone = riderPhone;
+      if (trackingUrl != null) job.trackingUrl = trackingUrl;
+      job.updatedAt = DateTime.now();
+    }
+
+    if (eventType == 'picked_up' || eventType == 'out_for_delivery') {
+      order.status = 'out_for_delivery';
+      order.updatedAt = DateTime.now();
+    } else if (eventType == 'delivered') {
+      order.status = 'delivered';
+      order.updatedAt = DateTime.now();
+    }
+
+    _logEvent(
+      orderNumber: orderNumber,
+      type: 'delivery_webhook_$eventType',
+      actorType: 'delivery_partner',
+      payload: 'Delivery status updated to $eventType by $provider',
+    );
+
+    return true;
+  }
+
   static DeliveryJob? getDeliveryJob(String orderNumber) {
     return _deliveryJobs[orderNumber];
   }

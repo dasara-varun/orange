@@ -307,6 +307,21 @@ class ApiService {
     }
   }
 
+  Future<OrderRecord?> cancelOrder(String orderNumber, String reason) async {
+    try {
+      return await client.order.cancelOrder(orderNumber, reason).timeout(const Duration(milliseconds: 1500));
+    } catch (_) {
+      final o = _orders[orderNumber];
+      if (o != null) {
+        o.status = 'rejected';
+        o.rejectionReason = 'Cancelled: $reason';
+        o.updatedAt = DateTime.now();
+        _logLocalEvent(orderNumber, 'order_cancelled', 'customer', 'Cancelled by customer: $reason');
+      }
+      return o;
+    }
+  }
+
   Future<List<OrderEvent>> getOrderEvents(String orderNumber) async {
     try {
       return await client.admin.getOrderEvents(orderNumber).timeout(const Duration(milliseconds: 1500));

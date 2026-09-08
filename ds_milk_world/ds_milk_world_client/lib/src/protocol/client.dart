@@ -178,6 +178,37 @@ class EndpointCheckout extends _i1.EndpointRef {
 }
 
 /// {@category Endpoint}
+class EndpointDeliveryWebhook extends _i1.EndpointRef {
+  EndpointDeliveryWebhook(_i1.EndpointCaller caller) : super(caller);
+
+  @override
+  String get name => 'deliveryWebhook';
+
+  _i2.Future<bool> processWebhook(
+    String provider,
+    String orderNumber,
+    String eventType,
+    String? riderName,
+    String? riderPhone,
+    String? trackingUrl,
+    String? signature,
+  ) =>
+      caller.callServerEndpoint<bool>(
+        'deliveryWebhook',
+        'processWebhook',
+        {
+          'provider': provider,
+          'orderNumber': orderNumber,
+          'eventType': eventType,
+          'riderName': riderName,
+          'riderPhone': riderPhone,
+          'trackingUrl': trackingUrl,
+          'signature': signature,
+        },
+      );
+}
+
+/// {@category Endpoint}
 class EndpointOrder extends _i1.EndpointRef {
   EndpointOrder(_i1.EndpointCaller caller) : super(caller);
 
@@ -219,6 +250,19 @@ class EndpointOrder extends _i1.EndpointRef {
         'order',
         'listActiveOrders',
         {},
+      );
+
+  _i2.Future<_i3.OrderRecord?> cancelOrder(
+    String orderNumber,
+    String reason,
+  ) =>
+      caller.callServerEndpoint<_i3.OrderRecord?>(
+        'order',
+        'cancelOrder',
+        {
+          'orderNumber': orderNumber,
+          'reason': reason,
+        },
       );
 }
 
@@ -301,6 +345,7 @@ class Client extends _i1.ServerpodClientShared {
     admin = EndpointAdmin(this);
     catalog = EndpointCatalog(this);
     checkout = EndpointCheckout(this);
+    deliveryWebhook = EndpointDeliveryWebhook(this);
     order = EndpointOrder(this);
     paymentWebhook = EndpointPaymentWebhook(this);
     quote = EndpointQuote(this);
@@ -311,6 +356,8 @@ class Client extends _i1.ServerpodClientShared {
   late final EndpointCatalog catalog;
 
   late final EndpointCheckout checkout;
+
+  late final EndpointDeliveryWebhook deliveryWebhook;
 
   late final EndpointOrder order;
 
@@ -323,6 +370,7 @@ class Client extends _i1.ServerpodClientShared {
         'admin': admin,
         'catalog': catalog,
         'checkout': checkout,
+        'deliveryWebhook': deliveryWebhook,
         'order': order,
         'paymentWebhook': paymentWebhook,
         'quote': quote,

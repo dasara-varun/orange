@@ -1,0 +1,51 @@
+services:
+  # Database Service
+  postgres:
+    image: pgvector/pgvector:pg16
+    restart: unless-stopped
+    ports:
+      - "8090:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_DB: ds_milk_world
+      POSTGRES_PASSWORD: "JDmGJ1xI_OTLxWx88rQ4-XPbWO78g4J3"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Serverpod Backend API
+  serverpod:
+    build:
+      context: ./ds_milk_world/ds_milk_world_server
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+      - "8081:8081"
+      - "8082:8082"
+    environment:
+      runmode: production
+      serverid: default
+      logging: normal
+      role: monolith
+
+  # Flutter Customer Storefront & Staff Operations Web App
+  web:
+    build:
+      context: ./ds_milk_world/ds_milk_world_flutter
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    depends_on:
+      - serverpod
+
+volumes:
+  postgres_data:

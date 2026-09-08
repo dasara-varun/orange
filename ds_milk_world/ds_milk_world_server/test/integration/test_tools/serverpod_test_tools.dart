@@ -114,6 +114,8 @@ class TestEndpoints {
 
   late final _CheckoutEndpoint checkout;
 
+  late final _DeliveryWebhookEndpoint deliveryWebhook;
+
   late final _OrderEndpoint order;
 
   late final _PaymentWebhookEndpoint paymentWebhook;
@@ -137,6 +139,10 @@ class _InternalTestEndpoints extends TestEndpoints
       serializationManager,
     );
     checkout = _CheckoutEndpoint(
+      endpoints,
+      serializationManager,
+    );
+    deliveryWebhook = _DeliveryWebhookEndpoint(
       endpoints,
       serializationManager,
     );
@@ -570,6 +576,60 @@ class _CheckoutEndpoint {
   }
 }
 
+class _DeliveryWebhookEndpoint {
+  _DeliveryWebhookEndpoint(
+    this._endpointDispatch,
+    this._serializationManager,
+  );
+
+  final _i2.EndpointDispatch _endpointDispatch;
+
+  final _i2.SerializationManager _serializationManager;
+
+  _i3.Future<bool> processWebhook(
+    _i1.TestSessionBuilder sessionBuilder,
+    String provider,
+    String orderNumber,
+    String eventType,
+    String? riderName,
+    String? riderPhone,
+    String? trackingUrl,
+    String? signature,
+  ) async {
+    return _i1.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _i1.InternalTestSessionBuilder).internalBuild(
+        endpoint: 'deliveryWebhook',
+        method: 'processWebhook',
+      );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'deliveryWebhook',
+          methodName: 'processWebhook',
+          parameters: _i1.testObjectToJson({
+            'provider': provider,
+            'orderNumber': orderNumber,
+            'eventType': eventType,
+            'riderName': riderName,
+            'riderPhone': riderPhone,
+            'trackingUrl': trackingUrl,
+            'signature': signature,
+          }),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _i3.Future<bool>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+}
+
 class _OrderEndpoint {
   _OrderEndpoint(
     this._endpointDispatch,
@@ -672,6 +732,39 @@ class _OrderEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _i3.Future<List<_i4.OrderRecord>>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _i3.Future<_i4.OrderRecord?> cancelOrder(
+    _i1.TestSessionBuilder sessionBuilder,
+    String orderNumber,
+    String reason,
+  ) async {
+    return _i1.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _i1.InternalTestSessionBuilder).internalBuild(
+        endpoint: 'order',
+        method: 'cancelOrder',
+      );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'order',
+          methodName: 'cancelOrder',
+          parameters: _i1.testObjectToJson({
+            'orderNumber': orderNumber,
+            'reason': reason,
+          }),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _i3.Future<_i4.OrderRecord?>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();

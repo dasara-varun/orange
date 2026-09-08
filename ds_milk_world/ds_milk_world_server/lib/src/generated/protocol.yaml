@@ -13,10 +13,13 @@ catalog:
   - updateProductAvailability:
 checkout:
   - createCheckoutSession:
+deliveryWebhook:
+  - processWebhook:
 order:
   - createOrder:
   - getOrder:
   - listActiveOrders:
+  - cancelOrder:
 paymentWebhook:
   - processWebhook:
 quote:
