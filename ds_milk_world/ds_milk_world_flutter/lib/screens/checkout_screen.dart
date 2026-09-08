@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:ds_milk_world_client/ds_milk_world_client.dart';
 import '../theme/app_theme.dart';
 import '../state/cart_state.dart';
@@ -18,6 +19,17 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   String _paymentMethod = 'UPI_QR';
   bool _isProcessing = false;
   String? _processingStep;
+
+  void _copyToClipboard(String text, String label) {
+    Clipboard.setData(ClipboardData(text: text));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('$label copied to clipboard!'),
+        duration: const Duration(seconds: 2),
+        backgroundColor: AppTheme.mint,
+      ),
+    );
+  }
 
   Future<void> _processPayment() async {
     setState(() {
@@ -295,47 +307,146 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             ),
             const SizedBox(height: 16),
 
-            // UPI QR Mock container if selected
-            if (_paymentMethod == 'UPI_QR')
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: AppTheme.cream,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppTheme.border),
-                ),
-                child: Column(
-                  children: [
-                    Container(
-                      width: 140,
-                      height: 140,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: AppTheme.border),
-                      ),
-                      child: const Center(
-                        child: Column(
+            // UPI QR & App Intent container if selected
+            if (_paymentMethod == 'UPI_QR' || _paymentMethod == 'UPI_INTENT') ...[
+              Builder(
+                builder: (context) {
+                  final rupeeAmount = (order.totalPaise / 100).toStringAsFixed(2);
+                  final upiId = '9030352248@upi';
+                  final upiUri = 'upi://pay?pa=$upiId&pn=DS%20Milk%20World&am=$rupeeAmount&cu=INR&tn=${order.orderNumber}';
+                  final qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${Uri.encodeComponent(upiUri)}';
+
+                  return Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: AppTheme.cream,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppTheme.saffron, width: 1.5),
+                    ),
+                    child: Column(
+                      children: [
+                        Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.qr_code_2, size: 90, color: AppTheme.cocoa),
+                            const Icon(Icons.flash_on, color: AppTheme.saffronDark, size: 18),
+                            const SizedBox(width: 6),
                             Text(
-                              'dsmilkworld@upi',
-                              style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: AppTheme.muted),
+                              'Instant UPI Payment • ${AppTheme.formatPaise(order.totalPaise)}',
+                              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: AppTheme.cocoa),
                             ),
                           ],
                         ),
-                      ),
+                        const SizedBox(height: 12),
+                        // Dynamic QR Code
+                        Container(
+                          width: 170,
+                          height: 170,
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: AppTheme.border, width: 1.5),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.08),
+                                blurRadius: 8,
+                                offset: const Offset(0, 3),
+                              ),
+                            ],
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: Image.network(
+                              qrUrl,
+                              fit: BoxFit.contain,
+                              loadingBuilder: (_, child, progress) =>
+                                  progress == null ? child : const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                              errorBuilder: (_, __, ___) => const Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(Icons.qr_code_2, size: 80, color: AppTheme.cocoa),
+                                    Text('Scan with GPay / PhonePe', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          'Scan with Google Pay, PhonePe, Paytm, BHIM, or CRED',
+                          style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.grey[800]),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 10),
+
+                        // Payee details chip
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: AppTheme.border),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.account_circle, size: 20, color: AppTheme.cocoa),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text('UPI ID / Payee Mobile', style: TextStyle(fontSize: 10, color: AppTheme.muted)),
+                                    Text(
+                                      upiId,
+                                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: AppTheme.cocoa),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.copy, size: 18, color: AppTheme.cocoa),
+                                tooltip: 'Copy UPI ID',
+                                onPressed: () => _copyToClipboard(upiId, 'UPI ID ($upiId)'),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+
+                        // 1-Tap Open UPI App Button
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton.icon(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppTheme.cocoa,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                            ),
+                            icon: const Icon(Icons.open_in_new, size: 18),
+                            label: const Text(
+                              'Pay via UPI App (Google Pay / PhonePe)',
+                              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+                            ),
+                            onPressed: () {
+                              _copyToClipboard(upiUri, 'Payment link');
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Opening UPI App for ₹${(order.totalPaise / 100).toStringAsFixed(0)} to 9030352248@upi...'),
+                                  backgroundColor: AppTheme.mint,
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 10),
-                    Text(
-                      'Scan with any UPI app to pay ${AppTheme.formatPaise(order.totalPaise)}',
-                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppTheme.cocoa),
-                    ),
-                  ],
-                ),
+                  );
+                },
               ),
+            ],
             const SizedBox(height: 16),
 
             // Guarantee & policy notice

@@ -50,6 +50,7 @@ class _InteractiveMapPickerState extends State<InteractiveMapPicker> {
 
   late double _currentLat;
   late double _currentLng;
+  bool _isDragging = false;
 
   // Landmarks in Vijayawada
   final List<Map<String, dynamic>> _landmarks = [
@@ -201,6 +202,9 @@ class _InteractiveMapPickerState extends State<InteractiveMapPicker> {
                       final lng = toLng(details.localPosition.dx);
                       _updatePosition(lat, lng);
                     },
+                    onPanStart: (_) => setState(() => _isDragging = true),
+                    onPanEnd: (_) => setState(() => _isDragging = false),
+                    onPanCancel: () => setState(() => _isDragging = false),
                     child: Stack(
                       children: [
                         // Custom Painted Map Background (Waterways, Roads, 5km circle)
@@ -269,10 +273,10 @@ class _InteractiveMapPickerState extends State<InteractiveMapPicker> {
                           ),
                         ),
 
-                        // User Selected Delivery Pin (Draggable)
+                        // User Selected Delivery Pin (Animated Lift & Drop like Rapido)
                         Positioned(
                           left: pinX - 16,
-                          top: pinY - 32,
+                          top: pinY - (_isDragging ? 44 : 32),
                           child: IgnorePointer(
                             child: Column(
                               mainAxisSize: MainAxisSize.min,
@@ -282,21 +286,30 @@ class _InteractiveMapPickerState extends State<InteractiveMapPicker> {
                                   decoration: BoxDecoration(
                                     color: isServiceable ? AppTheme.cocoa : AppTheme.error,
                                     borderRadius: BorderRadius.circular(4),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withValues(alpha: _isDragging ? 0.3 : 0.15),
+                                        blurRadius: _isDragging ? 8 : 4,
+                                        offset: Offset(0, _isDragging ? 6 : 2),
+                                      ),
+                                    ],
                                   ),
                                   child: Text(
-                                    isServiceable ? 'Drop Here' : 'Out of range',
+                                    _isDragging
+                                        ? 'Release to Set Drop'
+                                        : (isServiceable ? 'Drop Here' : 'Out of range'),
                                     style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold),
                                   ),
                                 ),
                                 Icon(
                                   Icons.location_on,
                                   color: isServiceable ? AppTheme.rose : AppTheme.error,
-                                  size: 32,
+                                  size: _isDragging ? 38 : 32,
                                   shadows: [
                                     Shadow(
-                                      color: Colors.black.withValues(alpha: 0.3),
-                                      blurRadius: 4,
-                                      offset: const Offset(0, 2),
+                                      color: Colors.black.withValues(alpha: _isDragging ? 0.4 : 0.2),
+                                      blurRadius: _isDragging ? 8 : 4,
+                                      offset: Offset(0, _isDragging ? 6 : 2),
                                     ),
                                   ],
                                 ),
@@ -316,7 +329,7 @@ class _InteractiveMapPickerState extends State<InteractiveMapPicker> {
                               borderRadius: BorderRadius.circular(4),
                             ),
                             child: const Text(
-                              '👆 Tap or drag anywhere on map to drop pin',
+                              '👆 Drag map to adjust pin position',
                               style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w600),
                             ),
                           ),
@@ -374,6 +387,65 @@ class _InteractiveMapPickerState extends State<InteractiveMapPicker> {
                   onPressed: () => _updatePosition(lat, lng),
                 );
               }).toList(),
+            ),
+          ),
+
+          // Rapido Bike Parcel Fare Card
+          Container(
+            margin: const EdgeInsets.fromLTRB(10, 0, 10, 10),
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: isServiceable ? AppTheme.cream : const Color(0xFFFFEBEE),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: isServiceable ? AppTheme.saffron : AppTheme.error),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: AppTheme.border),
+                  ),
+                  child: const Center(
+                    child: Text('🛵', style: TextStyle(fontSize: 20)),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            'Rapido Bike Parcel',
+                            style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13, color: AppTheme.cocoa),
+                          ),
+                          Text(
+                            isServiceable ? '₹${fee ~/ 100}' : 'Blocked',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w900,
+                              fontSize: 16,
+                              color: isServiceable ? AppTheme.cocoa : AppTheme.error,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        isServiceable
+                            ? '8-12m pickup • ₹30 base (2 km) + ₹10/km (${dist.toStringAsFixed(1)} km)'
+                            : 'Exceeds 5.0 km freshness radius limit',
+                        style: TextStyle(fontSize: 11, color: isServiceable ? AppTheme.muted : AppTheme.error),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
         ],
