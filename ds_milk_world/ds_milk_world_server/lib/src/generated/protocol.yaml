@@ -1,2 +1,23 @@
-greeting:
-  - hello:
+admin:
+  - acceptOrder:
+  - rejectOrder:
+  - markReady:
+  - assignDelivery:
+  - markDelivered:
+  - getDeliveryJob:
+  - createRefund:
+  - getOrderEvents:
+  - listAllOrders:
+catalog:
+  - getCatalog:
+  - updateProductAvailability:
+checkout:
+  - createCheckoutSession:
+order:
+  - createOrder:
+  - getOrder:
+  - listActiveOrders:
+paymentWebhook:
+  - processWebhook:
+quote:
+  - getDeliveryQuote:

@@ -11,19 +11,20 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod/serverpod.dart' as _i1;
 import 'package:serverpod/protocol.dart' as _i2;
-import 'greeting.dart' as _i3;
-import 'category.dart' as _i4;
-import 'delivery_job.dart' as _i5;
-import 'delivery_quote.dart' as _i6;
-import 'order_event.dart' as _i7;
-import 'order_item.dart' as _i8;
-import 'order_record.dart' as _i9;
-import 'outlet.dart' as _i10;
-import 'payment_attempt.dart' as _i11;
-import 'product.dart' as _i12;
-import 'refund_record.dart' as _i13;
-import 'store_catalog.dart' as _i14;
-export 'greeting.dart';
+import 'category.dart' as _i3;
+import 'delivery_job.dart' as _i4;
+import 'delivery_quote.dart' as _i5;
+import 'order_event.dart' as _i6;
+import 'order_item.dart' as _i7;
+import 'order_record.dart' as _i8;
+import 'outlet.dart' as _i9;
+import 'payment_attempt.dart' as _i10;
+import 'product.dart' as _i11;
+import 'refund_record.dart' as _i12;
+import 'store_catalog.dart' as _i13;
+import 'package:ds_milk_world_server/src/generated/order_event.dart' as _i14;
+import 'package:ds_milk_world_server/src/generated/order_record.dart' as _i15;
+import 'package:ds_milk_world_server/src/generated/order_item.dart' as _i16;
 export 'category.dart';
 export 'delivery_job.dart';
 export 'delivery_quote.dart';
@@ -833,88 +834,95 @@ class Protocol extends _i1.SerializationManagerServer {
     Type? t,
   ]) {
     t ??= T;
-    if (t == _i3.Greeting) {
-      return _i3.Greeting.fromJson(data) as T;
+    if (t == _i3.Category) {
+      return _i3.Category.fromJson(data) as T;
     }
-    if (t == _i4.Category) {
-      return _i4.Category.fromJson(data) as T;
+    if (t == _i4.DeliveryJob) {
+      return _i4.DeliveryJob.fromJson(data) as T;
     }
-    if (t == _i5.DeliveryJob) {
-      return _i5.DeliveryJob.fromJson(data) as T;
+    if (t == _i5.DeliveryQuote) {
+      return _i5.DeliveryQuote.fromJson(data) as T;
     }
-    if (t == _i6.DeliveryQuote) {
-      return _i6.DeliveryQuote.fromJson(data) as T;
+    if (t == _i6.OrderEvent) {
+      return _i6.OrderEvent.fromJson(data) as T;
     }
-    if (t == _i7.OrderEvent) {
-      return _i7.OrderEvent.fromJson(data) as T;
+    if (t == _i7.OrderItem) {
+      return _i7.OrderItem.fromJson(data) as T;
     }
-    if (t == _i8.OrderItem) {
-      return _i8.OrderItem.fromJson(data) as T;
+    if (t == _i8.OrderRecord) {
+      return _i8.OrderRecord.fromJson(data) as T;
     }
-    if (t == _i9.OrderRecord) {
-      return _i9.OrderRecord.fromJson(data) as T;
+    if (t == _i9.Outlet) {
+      return _i9.Outlet.fromJson(data) as T;
     }
-    if (t == _i10.Outlet) {
-      return _i10.Outlet.fromJson(data) as T;
+    if (t == _i10.PaymentAttempt) {
+      return _i10.PaymentAttempt.fromJson(data) as T;
     }
-    if (t == _i11.PaymentAttempt) {
-      return _i11.PaymentAttempt.fromJson(data) as T;
+    if (t == _i11.Product) {
+      return _i11.Product.fromJson(data) as T;
     }
-    if (t == _i12.Product) {
-      return _i12.Product.fromJson(data) as T;
+    if (t == _i12.RefundRecord) {
+      return _i12.RefundRecord.fromJson(data) as T;
     }
-    if (t == _i13.RefundRecord) {
-      return _i13.RefundRecord.fromJson(data) as T;
+    if (t == _i13.StoreCatalog) {
+      return _i13.StoreCatalog.fromJson(data) as T;
     }
-    if (t == _i14.StoreCatalog) {
-      return _i14.StoreCatalog.fromJson(data) as T;
+    if (t == _i1.getType<_i3.Category?>()) {
+      return (data != null ? _i3.Category.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i3.Greeting?>()) {
-      return (data != null ? _i3.Greeting.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i4.DeliveryJob?>()) {
+      return (data != null ? _i4.DeliveryJob.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i4.Category?>()) {
-      return (data != null ? _i4.Category.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i5.DeliveryQuote?>()) {
+      return (data != null ? _i5.DeliveryQuote.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i5.DeliveryJob?>()) {
-      return (data != null ? _i5.DeliveryJob.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i6.OrderEvent?>()) {
+      return (data != null ? _i6.OrderEvent.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i6.DeliveryQuote?>()) {
-      return (data != null ? _i6.DeliveryQuote.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i7.OrderItem?>()) {
+      return (data != null ? _i7.OrderItem.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i7.OrderEvent?>()) {
-      return (data != null ? _i7.OrderEvent.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i8.OrderRecord?>()) {
+      return (data != null ? _i8.OrderRecord.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i8.OrderItem?>()) {
-      return (data != null ? _i8.OrderItem.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i9.Outlet?>()) {
+      return (data != null ? _i9.Outlet.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i9.OrderRecord?>()) {
-      return (data != null ? _i9.OrderRecord.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i10.PaymentAttempt?>()) {
+      return (data != null ? _i10.PaymentAttempt.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i10.Outlet?>()) {
-      return (data != null ? _i10.Outlet.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i11.Product?>()) {
+      return (data != null ? _i11.Product.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i11.PaymentAttempt?>()) {
-      return (data != null ? _i11.PaymentAttempt.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i12.RefundRecord?>()) {
+      return (data != null ? _i12.RefundRecord.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i12.Product?>()) {
-      return (data != null ? _i12.Product.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i13.StoreCatalog?>()) {
+      return (data != null ? _i13.StoreCatalog.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i13.RefundRecord?>()) {
-      return (data != null ? _i13.RefundRecord.fromJson(data) : null) as T;
-    }
-    if (t == _i1.getType<_i14.StoreCatalog?>()) {
-      return (data != null ? _i14.StoreCatalog.fromJson(data) : null) as T;
-    }
-    if (t == List<_i8.OrderItem>) {
-      return (data as List).map((e) => deserialize<_i8.OrderItem>(e)).toList()
+    if (t == List<_i7.OrderItem>) {
+      return (data as List).map((e) => deserialize<_i7.OrderItem>(e)).toList()
           as T;
     }
-    if (t == List<_i4.Category>) {
-      return (data as List).map((e) => deserialize<_i4.Category>(e)).toList()
+    if (t == List<_i3.Category>) {
+      return (data as List).map((e) => deserialize<_i3.Category>(e)).toList()
           as T;
     }
-    if (t == List<_i12.Product>) {
-      return (data as List).map((e) => deserialize<_i12.Product>(e)).toList()
+    if (t == List<_i11.Product>) {
+      return (data as List).map((e) => deserialize<_i11.Product>(e)).toList()
+          as T;
+    }
+    if (t == List<_i14.OrderEvent>) {
+      return (data as List).map((e) => deserialize<_i14.OrderEvent>(e)).toList()
+          as T;
+    }
+    if (t == List<_i15.OrderRecord>) {
+      return (data as List)
+          .map((e) => deserialize<_i15.OrderRecord>(e))
+          .toList() as T;
+    }
+    if (t == List<_i16.OrderItem>) {
+      return (data as List).map((e) => deserialize<_i16.OrderItem>(e)).toList()
           as T;
     }
     try {
@@ -927,40 +935,37 @@ class Protocol extends _i1.SerializationManagerServer {
   String? getClassNameForObject(Object? data) {
     String? className = super.getClassNameForObject(data);
     if (className != null) return className;
-    if (data is _i3.Greeting) {
-      return 'Greeting';
-    }
-    if (data is _i4.Category) {
+    if (data is _i3.Category) {
       return 'Category';
     }
-    if (data is _i5.DeliveryJob) {
+    if (data is _i4.DeliveryJob) {
       return 'DeliveryJob';
     }
-    if (data is _i6.DeliveryQuote) {
+    if (data is _i5.DeliveryQuote) {
       return 'DeliveryQuote';
     }
-    if (data is _i7.OrderEvent) {
+    if (data is _i6.OrderEvent) {
       return 'OrderEvent';
     }
-    if (data is _i8.OrderItem) {
+    if (data is _i7.OrderItem) {
       return 'OrderItem';
     }
-    if (data is _i9.OrderRecord) {
+    if (data is _i8.OrderRecord) {
       return 'OrderRecord';
     }
-    if (data is _i10.Outlet) {
+    if (data is _i9.Outlet) {
       return 'Outlet';
     }
-    if (data is _i11.PaymentAttempt) {
+    if (data is _i10.PaymentAttempt) {
       return 'PaymentAttempt';
     }
-    if (data is _i12.Product) {
+    if (data is _i11.Product) {
       return 'Product';
     }
-    if (data is _i13.RefundRecord) {
+    if (data is _i12.RefundRecord) {
       return 'RefundRecord';
     }
-    if (data is _i14.StoreCatalog) {
+    if (data is _i13.StoreCatalog) {
       return 'StoreCatalog';
     }
     className = _i2.Protocol().getClassNameForObject(data);
@@ -976,41 +981,38 @@ class Protocol extends _i1.SerializationManagerServer {
     if (dataClassName is! String) {
       return super.deserializeByClassName(data);
     }
-    if (dataClassName == 'Greeting') {
-      return deserialize<_i3.Greeting>(data['data']);
-    }
     if (dataClassName == 'Category') {
-      return deserialize<_i4.Category>(data['data']);
+      return deserialize<_i3.Category>(data['data']);
     }
     if (dataClassName == 'DeliveryJob') {
-      return deserialize<_i5.DeliveryJob>(data['data']);
+      return deserialize<_i4.DeliveryJob>(data['data']);
     }
     if (dataClassName == 'DeliveryQuote') {
-      return deserialize<_i6.DeliveryQuote>(data['data']);
+      return deserialize<_i5.DeliveryQuote>(data['data']);
     }
     if (dataClassName == 'OrderEvent') {
-      return deserialize<_i7.OrderEvent>(data['data']);
+      return deserialize<_i6.OrderEvent>(data['data']);
     }
     if (dataClassName == 'OrderItem') {
-      return deserialize<_i8.OrderItem>(data['data']);
+      return deserialize<_i7.OrderItem>(data['data']);
     }
     if (dataClassName == 'OrderRecord') {
-      return deserialize<_i9.OrderRecord>(data['data']);
+      return deserialize<_i8.OrderRecord>(data['data']);
     }
     if (dataClassName == 'Outlet') {
-      return deserialize<_i10.Outlet>(data['data']);
+      return deserialize<_i9.Outlet>(data['data']);
     }
     if (dataClassName == 'PaymentAttempt') {
-      return deserialize<_i11.PaymentAttempt>(data['data']);
+      return deserialize<_i10.PaymentAttempt>(data['data']);
     }
     if (dataClassName == 'Product') {
-      return deserialize<_i12.Product>(data['data']);
+      return deserialize<_i11.Product>(data['data']);
     }
     if (dataClassName == 'RefundRecord') {
-      return deserialize<_i13.RefundRecord>(data['data']);
+      return deserialize<_i12.RefundRecord>(data['data']);
     }
     if (dataClassName == 'StoreCatalog') {
-      return deserialize<_i14.StoreCatalog>(data['data']);
+      return deserialize<_i13.StoreCatalog>(data['data']);
     }
     if (dataClassName.startsWith('serverpod.')) {
       data['className'] = dataClassName.substring(10);
@@ -1028,24 +1030,24 @@ class Protocol extends _i1.SerializationManagerServer {
       }
     }
     switch (t) {
-      case _i4.Category:
-        return _i4.Category.t;
-      case _i5.DeliveryJob:
-        return _i5.DeliveryJob.t;
-      case _i7.OrderEvent:
-        return _i7.OrderEvent.t;
-      case _i8.OrderItem:
-        return _i8.OrderItem.t;
-      case _i9.OrderRecord:
-        return _i9.OrderRecord.t;
-      case _i10.Outlet:
-        return _i10.Outlet.t;
-      case _i11.PaymentAttempt:
-        return _i11.PaymentAttempt.t;
-      case _i12.Product:
-        return _i12.Product.t;
-      case _i13.RefundRecord:
-        return _i13.RefundRecord.t;
+      case _i3.Category:
+        return _i3.Category.t;
+      case _i4.DeliveryJob:
+        return _i4.DeliveryJob.t;
+      case _i6.OrderEvent:
+        return _i6.OrderEvent.t;
+      case _i7.OrderItem:
+        return _i7.OrderItem.t;
+      case _i8.OrderRecord:
+        return _i8.OrderRecord.t;
+      case _i9.Outlet:
+        return _i9.Outlet.t;
+      case _i10.PaymentAttempt:
+        return _i10.PaymentAttempt.t;
+      case _i11.Product:
+        return _i11.Product.t;
+      case _i12.RefundRecord:
+        return _i12.RefundRecord.t;
     }
     return null;
   }
