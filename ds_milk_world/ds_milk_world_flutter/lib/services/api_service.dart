@@ -46,6 +46,35 @@ class ApiService {
     }
   }
 
+  Future<bool> updateProductDetails({
+    required String sku,
+    int? pricePaise,
+    int? offerPricePaise,
+    bool? availability,
+    bool? customisable,
+    String? shortDescription,
+  }) async {
+    try {
+      return await client.admin.updateProductDetails(
+        sku,
+        pricePaise,
+        offerPricePaise,
+        availability,
+        customisable,
+        shortDescription,
+      ).timeout(const Duration(milliseconds: 1500));
+    } catch (_) {
+      return MockData.updateProductDetails(
+        sku: sku,
+        pricePaise: pricePaise,
+        offerPricePaise: offerPricePaise,
+        availability: availability,
+        customisable: customisable,
+        shortDescription: shortDescription,
+      );
+    }
+  }
+
   Future<DeliveryQuote> getDeliveryQuote(double lat, double lng) async {
     try {
       return await client.quote.getDeliveryQuote(lat, lng).timeout(const Duration(milliseconds: 1500));

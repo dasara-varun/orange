@@ -83,5 +83,23 @@ void main() {
       expect(find.text('My Past Orders'), findsOneWidget);
       expect(find.text('Start Ordering'), findsOneWidget);
     });
+
+    testWidgets('Tapping guarantee banner shows DS Milk World Direct Guarantee dialog', (WidgetTester tester) async {
+      await tester.pumpWidget(const DsMilkWorldApp());
+      await tester.pumpAndSettle();
+
+      final bannerText = find.textContaining('Direct prep');
+      expect(bannerText, findsOneWidget);
+      await tester.tap(bannerText);
+      await tester.pumpAndSettle();
+
+      expect(find.text('DS Milk World Direct Guarantee'), findsOneWidget);
+      expect(find.text('Authentic Counter Prices'), findsOneWidget);
+      expect(find.text('5.0 km Strict Freshness Perimeter'), findsOneWidget);
+
+      await tester.tap(find.text('Got It'));
+      await tester.pumpAndSettle();
+      expect(find.text('DS Milk World Direct Guarantee'), findsNothing);
+    });
   });
 }

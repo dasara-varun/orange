@@ -125,3 +125,5 @@ flutter analyze
 3. **Delivery Fee Calculation**: Dynamic fee formula: Base ₹30 (3000 paise) up to 2.0 km, + ₹10/km (1000 paise/km) thereafter.
 4. **Idempotent Webhooks**: Repeated delivery of identical payment webhook notifications will not trigger duplicate fulfillment workflows.
 5. **Shop Rejection Guarantee**: If the shop rejects an order due to kitchen capacity or ingredient exhaustion, an automated refund record is generated immediately.
+6. **Customer Self-Cancellation with Auto-Refund**: Customers can self-cancel before kitchen prep begins (`paid` state), triggering an instant 100% refund to the source. Once in `preparing`, cancellations are disabled to prevent perishable food waste.
+7. **Staff Real-time Catalog & Price Control**: Staff console allows instant toggling of item stock availability, promotional offer pricing, and description updates synchronized across store displays.

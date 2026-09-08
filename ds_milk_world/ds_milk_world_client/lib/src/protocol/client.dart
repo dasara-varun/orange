@@ -126,6 +126,27 @@ class EndpointAdmin extends _i1.EndpointRef {
         'listAllOrders',
         {'statusFilter': statusFilter},
       );
+
+  _i2.Future<bool> updateProductDetails(
+    String sku,
+    int? pricePaise,
+    int? offerPricePaise,
+    bool? availability,
+    bool? customisable,
+    String? shortDescription,
+  ) =>
+      caller.callServerEndpoint<bool>(
+        'admin',
+        'updateProductDetails',
+        {
+          'sku': sku,
+          'pricePaise': pricePaise,
+          'offerPricePaise': offerPricePaise,
+          'availability': availability,
+          'customisable': customisable,
+          'shortDescription': shortDescription,
+        },
+      );
 }
 
 /// {@category Endpoint}

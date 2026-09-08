@@ -117,28 +117,33 @@ class OutletHeader extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: AppTheme.cream,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: AppTheme.border),
-            ),
-            child: const Row(
-              children: [
-                Icon(Icons.verified, size: 16, color: AppTheme.saffronDark),
-                SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    'Order at outlet prices • Direct preparation • 5 km delivery radius in Vijayawada',
-                    style: TextStyle(
-                      color: AppTheme.cocoa,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
+          InkWell(
+            onTap: () => _showGuaranteeDialog(context),
+            borderRadius: BorderRadius.circular(8),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: AppTheme.cream,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: AppTheme.border),
+              ),
+              child: const Row(
+                children: [
+                  Icon(Icons.verified, size: 16, color: AppTheme.saffronDark),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Order at outlet prices • Direct prep • 5 km Vijayawada radius',
+                      style: TextStyle(
+                        color: AppTheme.cocoa,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
-                ),
-              ],
+                  Icon(Icons.info_outline, size: 16, color: AppTheme.cocoa),
+                ],
+              ),
             ),
           ),
           const SizedBox(height: 12),
@@ -154,6 +159,115 @@ class OutletHeader extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+
+  void _showGuaranteeDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.verified, color: AppTheme.saffronDark),
+            SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                'DS Milk World Direct Guarantee',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: AppTheme.cocoa),
+              ),
+            ),
+          ],
+        ),
+        content: const SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _GuaranteeTile(
+                icon: Icons.storefront,
+                title: 'Authentic Counter Prices',
+                description: 'Direct menu pricing with zero third-party aggregator commissions or inflated catalog rates.',
+              ),
+              SizedBox(height: 12),
+              _GuaranteeTile(
+                icon: Icons.location_on,
+                title: '5.0 km Strict Freshness Perimeter',
+                description: 'Deliveries limited strictly to 5.0 km around our Auto Nagar counter (Vijayawada) so cold dairy treats and thickshakes arrive in peak condition.',
+              ),
+              SizedBox(height: 12),
+              _GuaranteeTile(
+                icon: Icons.delivery_dining,
+                title: 'Transparent Delivery Fee',
+                description: 'Flat ₹30 for the first 2.0 km, + ₹10/km beyond that. Real-time Haversine distance calculation.',
+              ),
+              SizedBox(height: 12),
+              _GuaranteeTile(
+                icon: Icons.restart_alt,
+                title: 'Instant 100% Refund Guarantee',
+                description: 'If your order is rejected or cancelled before kitchen prep, a 100% refund is initiated immediately to your payment source.',
+              ),
+              SizedBox(height: 12),
+              _GuaranteeTile(
+                icon: Icons.phone_in_talk,
+                title: 'Counter Contact & Hygiene',
+                description: 'FSSAI compliant facility. Need quick assistance? Direct counter line: +91 866 254 9999.',
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Got It'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _GuaranteeTile extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String description;
+
+  const _GuaranteeTile({
+    required this.icon,
+    required this.title,
+    required this.description,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(6),
+          decoration: BoxDecoration(
+            color: AppTheme.cream,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(icon, size: 18, color: AppTheme.saffronDark),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: AppTheme.cocoa),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                description,
+                style: const TextStyle(fontSize: 11, color: AppTheme.muted, height: 1.3),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

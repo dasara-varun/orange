@@ -459,6 +459,47 @@ class _AdminEndpoint {
       }
     });
   }
+
+  _i3.Future<bool> updateProductDetails(
+    _i1.TestSessionBuilder sessionBuilder,
+    String sku,
+    int? pricePaise,
+    int? offerPricePaise,
+    bool? availability,
+    bool? customisable,
+    String? shortDescription,
+  ) async {
+    return _i1.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _i1.InternalTestSessionBuilder).internalBuild(
+        endpoint: 'admin',
+        method: 'updateProductDetails',
+      );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'admin',
+          methodName: 'updateProductDetails',
+          parameters: _i1.testObjectToJson({
+            'sku': sku,
+            'pricePaise': pricePaise,
+            'offerPricePaise': offerPricePaise,
+            'availability': availability,
+            'customisable': customisable,
+            'shortDescription': shortDescription,
+          }),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _i3.Future<bool>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
 }
 
 class _CatalogEndpoint {

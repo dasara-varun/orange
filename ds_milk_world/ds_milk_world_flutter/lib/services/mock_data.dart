@@ -1078,4 +1078,22 @@ class MockData {
       p.availability = availability;
     }
   }
+
+  static bool updateProductDetails({
+    required String sku,
+    int? pricePaise,
+    int? offerPricePaise,
+    bool? availability,
+    bool? customisable,
+    String? shortDescription,
+  }) {
+    final p = getProductBySku(sku);
+    if (p == null) return false;
+    if (pricePaise != null) p.pricePaise = pricePaise;
+    p.offerPricePaise = offerPricePaise;
+    if (availability != null) p.availability = availability;
+    if (customisable != null) p.customisable = customisable;
+    if (shortDescription != null) p.shortDescription = shortDescription;
+    return true;
+  }
 }

@@ -8,6 +8,7 @@ admin:
   - createRefund:
   - getOrderEvents:
   - listAllOrders:
+  - updateProductDetails:
 catalog:
   - getCatalog:
   - updateProductAvailability:

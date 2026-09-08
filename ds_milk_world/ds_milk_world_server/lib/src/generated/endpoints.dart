@@ -292,6 +292,54 @@ class Endpoints extends _i1.EndpointDispatch {
             params['statusFilter'],
           ),
         ),
+        'updateProductDetails': _i1.MethodConnector(
+          name: 'updateProductDetails',
+          params: {
+            'sku': _i1.ParameterDescription(
+              name: 'sku',
+              type: _i1.getType<String>(),
+              nullable: false,
+            ),
+            'pricePaise': _i1.ParameterDescription(
+              name: 'pricePaise',
+              type: _i1.getType<int?>(),
+              nullable: true,
+            ),
+            'offerPricePaise': _i1.ParameterDescription(
+              name: 'offerPricePaise',
+              type: _i1.getType<int?>(),
+              nullable: true,
+            ),
+            'availability': _i1.ParameterDescription(
+              name: 'availability',
+              type: _i1.getType<bool?>(),
+              nullable: true,
+            ),
+            'customisable': _i1.ParameterDescription(
+              name: 'customisable',
+              type: _i1.getType<bool?>(),
+              nullable: true,
+            ),
+            'shortDescription': _i1.ParameterDescription(
+              name: 'shortDescription',
+              type: _i1.getType<String?>(),
+              nullable: true,
+            ),
+          },
+          call: (
+            _i1.Session session,
+            Map<String, dynamic> params,
+          ) async =>
+              (endpoints['admin'] as _i2.AdminEndpoint).updateProductDetails(
+            session,
+            params['sku'],
+            params['pricePaise'],
+            params['offerPricePaise'],
+            params['availability'],
+            params['customisable'],
+            params['shortDescription'],
+          ),
+        ),
       },
     );
     connectors['catalog'] = _i1.EndpointConnector(

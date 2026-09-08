@@ -289,6 +289,146 @@ class _StaffConsoleScreenState extends State<StaffConsoleScreen> with SingleTick
     _loadData();
   }
 
+  // Action: Edit Product Details (Price, Offer, Description, Customizability)
+  void _showEditProductDialog(Product prod) {
+    final priceCtrl = TextEditingController(text: (prod.pricePaise / 100).toStringAsFixed(0));
+    final offerCtrl = TextEditingController(
+      text: prod.offerPricePaise != null ? (prod.offerPricePaise! / 100).toStringAsFixed(0) : '',
+    );
+    final descCtrl = TextEditingController(text: prod.shortDescription ?? '');
+    bool isAvail = prod.availability;
+    bool isCustom = prod.customisable;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: Row(
+            children: [
+              const Icon(Icons.edit_note, color: AppTheme.cocoa),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Edit ${prod.name}',
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'SKU: ${prod.sku} • Category: ${prod.categoryName}',
+                  style: const TextStyle(fontSize: 12, color: AppTheme.muted),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: priceCtrl,
+                        keyboardType: TextInputType.number,
+                        decoration: const InputDecoration(
+                          labelText: 'Base Price (₹)',
+                          prefixText: '₹ ',
+                          isDense: true,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: TextField(
+                        controller: offerCtrl,
+                        keyboardType: TextInputType.number,
+                        decoration: const InputDecoration(
+                          labelText: 'Offer Price (₹)',
+                          hintText: 'Optional',
+                          prefixText: '₹ ',
+                          isDense: true,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 14),
+                TextField(
+                  controller: descCtrl,
+                  maxLines: 3,
+                  decoration: const InputDecoration(
+                    labelText: 'Item Description',
+                    hintText: 'Fresh counter prep details...',
+                    isDense: true,
+                  ),
+                ),
+                const SizedBox(height: 14),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('In Stock & Available', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                  subtitle: const Text('Visible for customer ordering', style: TextStyle(fontSize: 11)),
+                  value: isAvail,
+                  activeColor: AppTheme.saffronDark,
+                  onChanged: (v) => setDialogState(() => isAvail = v),
+                ),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('Customizable', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                  subtitle: const Text('Allow ice, sugar & topping instructions', style: TextStyle(fontSize: 11)),
+                  value: isCustom,
+                  activeColor: AppTheme.saffronDark,
+                  onChanged: (v) => setDialogState(() => isCustom = v),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                final basePrice = (double.tryParse(priceCtrl.text) ?? (prod.pricePaise / 100)) * 100;
+                final offerVal = double.tryParse(offerCtrl.text);
+                final offerPricePaise = offerVal != null ? (offerVal * 100).toInt() : null;
+
+                final success = await ApiService.instance.updateProductDetails(
+                  sku: prod.sku,
+                  pricePaise: basePrice.toInt(),
+                  offerPricePaise: offerPricePaise,
+                  shortDescription: descCtrl.text.trim(),
+                  availability: isAvail,
+                  customisable: isCustom,
+                );
+
+                if (!ctx.mounted) return;
+                Navigator.pop(ctx);
+                if (!mounted) return;
+                setState(() {
+                  prod.pricePaise = basePrice.toInt();
+                  prod.offerPricePaise = offerPricePaise;
+                  prod.shortDescription = descCtrl.text.trim();
+                  prod.availability = isAvail;
+                  prod.customisable = isCustom;
+                });
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(success ? 'Updated ${prod.name} successfully' : 'Updated locally'),
+                    backgroundColor: AppTheme.mint,
+                  ),
+                );
+              },
+              child: const Text('Save Details'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final newOrders = _filterByStatus('new');
@@ -541,21 +681,52 @@ class _StaffConsoleScreenState extends State<StaffConsoleScreen> with SingleTick
               final prod = filtered[idx];
               return ListTile(
                 dense: true,
-                title: Text(
-                  prod.name,
-                  style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+                onTap: () => _showEditProductDialog(prod),
+                title: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        prod.name,
+                        style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+                      ),
+                    ),
+                    if (prod.offerPricePaise != null) ...[
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFFEBEE),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          'SALE ${AppTheme.formatPaise(prod.offerPricePaise!)}',
+                          style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: AppTheme.rose),
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                    ],
+                  ],
                 ),
                 subtitle: Text(
-                  '${prod.categoryName} • ${AppTheme.formatPaise(prod.pricePaise)} • ${prod.sku}',
+                  '${prod.categoryName} • ${AppTheme.formatPaise(prod.pricePaise)} • SKU: ${prod.sku}${prod.customisable ? " • Customizable" : ""}',
                   style: const TextStyle(fontSize: 11, color: AppTheme.muted),
                 ),
-                trailing: Switch(
-                  value: prod.availability,
-                  activeColor: AppTheme.saffronDark,
-                  onChanged: (val) async {
-                    setState(() => prod.availability = val);
-                    await ApiService.instance.updateProductAvailability(prod.sku, val);
-                  },
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.edit_outlined, size: 18, color: AppTheme.cocoa),
+                      tooltip: 'Edit Price & Details',
+                      onPressed: () => _showEditProductDialog(prod),
+                    ),
+                    Switch(
+                      value: prod.availability,
+                      activeColor: AppTheme.saffronDark,
+                      onChanged: (val) async {
+                        setState(() => prod.availability = val);
+                        await ApiService.instance.updateProductAvailability(prod.sku, val);
+                      },
+                    ),
+                  ],
                 ),
               );
             },

@@ -1,6 +1,7 @@
 import 'package:serverpod/serverpod.dart';
 import '../generated/protocol.dart';
 import '../services/order_service.dart';
+import '../services/catalog_service.dart';
 
 class AdminEndpoint extends Endpoint {
   Future<OrderRecord?> acceptOrder(
@@ -92,5 +93,24 @@ class AdminEndpoint extends Endpoint {
     String? statusFilter,
   ) async {
     return OrderService.listAllOrders(statusFilter);
+  }
+
+  Future<bool> updateProductDetails(
+    Session session,
+    String sku,
+    int? pricePaise,
+    int? offerPricePaise,
+    bool? availability,
+    bool? customisable,
+    String? shortDescription,
+  ) async {
+    return CatalogService.updateProductDetails(
+      sku: sku,
+      pricePaise: pricePaise,
+      offerPricePaise: offerPricePaise,
+      availability: availability,
+      customisable: customisable,
+      shortDescription: shortDescription,
+    );
   }
 }
