@@ -49,30 +49,34 @@ class FloatingCartBar extends StatelessWidget {
                       ),
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        AppTheme.formatPaise(subtotal),
-                        style: const TextStyle(
-                          color: AppTheme.milk,
-                          fontWeight: FontWeight.w800,
-                          fontSize: 16,
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          AppTheme.formatPaise(subtotal),
+                          style: const TextStyle(
+                            color: AppTheme.milk,
+                            fontWeight: FontWeight.w800,
+                            fontSize: 16,
+                          ),
                         ),
-                      ),
-                      const Text(
-                        'Plus delivery fee at next step',
-                        style: TextStyle(
-                          color: AppTheme.cream,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w500,
+                        const Text(
+                          'Plus delivery fee at next step',
+                          style: TextStyle(
+                            color: AppTheme.cream,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w500,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                  const Spacer(),
+                  const SizedBox(width: 8),
                   ElevatedButton(
                     onPressed: () {
                       showModalBottomSheet(
@@ -85,7 +89,7 @@ class FloatingCartBar extends StatelessWidget {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppTheme.saffron,
                       foregroundColor: AppTheme.cocoa,
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                     ),
                     child: const Row(
                       mainAxisSize: MainAxisSize.min,

@@ -29,70 +29,83 @@ class OutletHeader extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Row(
-                children: [
-                  Container(
-                    width: 46,
-                    height: 46,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: AppTheme.saffron, width: 1.5),
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppTheme.cocoa.withValues(alpha: 0.1),
-                          blurRadius: 4,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(10.5),
-                      child: Image.asset(
-                        'assets/images/ds_logo_square.png',
-                        fit: BoxFit.cover,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'DS Milk World',
-                        style: TextStyle(
-                          color: AppTheme.cocoa,
-                          fontSize: 20,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: -0.5,
-                        ),
-                      ),
-                      Row(
-                        children: [
-                          Container(
-                            width: 8,
-                            height: 8,
-                            decoration: const BoxDecoration(
-                              color: AppTheme.mint,
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                          const SizedBox(width: 6),
-                          const Text(
-                            'Open Now • Auto Nagar Counter',
-                            style: TextStyle(
-                              color: AppTheme.cocoa,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                            ),
+              Expanded(
+                child: Row(
+                  children: [
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: AppTheme.saffron, width: 1.5),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppTheme.cocoa.withValues(alpha: 0.08),
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
                           ),
                         ],
                       ),
-                    ],
-                  ),
-                ],
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(8.5),
+                        child: Image.asset(
+                          'assets/images/ds_logo_square.png',
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Text(
+                            'DS Milk World',
+                            style: TextStyle(
+                              color: AppTheme.cocoa,
+                              fontSize: 17,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: -0.5,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 2),
+                          Row(
+                            children: [
+                              Container(
+                                width: 7,
+                                height: 7,
+                                decoration: const BoxDecoration(
+                                  color: AppTheme.mint,
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                              const SizedBox(width: 5),
+                              const Flexible(
+                                child: Text(
+                                  'Auto Nagar Counter',
+                                  style: TextStyle(
+                                    color: AppTheme.cocoa,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
+              const SizedBox(width: 4),
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -100,23 +113,33 @@ class OutletHeader extends StatelessWidget {
                     IconButton(
                       icon: const Icon(Icons.receipt_long_outlined, size: 20, color: AppTheme.cocoa),
                       tooltip: 'My Past Orders',
+                      padding: const EdgeInsets.all(6),
+                      constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
                       onPressed: onOpenHistory,
                     ),
-                  OutlinedButton.icon(
+                  OutlinedButton(
                     onPressed: onToggleStaffMode,
-                    icon: Icon(
-                      isStaffMode ? Icons.storefront : Icons.admin_panel_settings,
-                      size: 16,
-                      color: AppTheme.cocoa,
-                    ),
-                    label: Text(
-                      isStaffMode ? 'Storefront' : 'Staff Ops',
-                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
-                    ),
                     style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       side: const BorderSide(color: AppTheme.border),
                       backgroundColor: isStaffMode ? AppTheme.cream : Colors.white,
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          isStaffMode ? Icons.storefront : Icons.admin_panel_settings,
+                          size: 14,
+                          color: AppTheme.cocoa,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          isStaffMode ? 'Store' : 'Staff',
+                          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppTheme.cocoa),
+                        ),
+                      ],
                     ),
                   ),
                 ],
@@ -167,6 +190,8 @@ class OutletHeader extends StatelessWidget {
                             fontWeight: FontWeight.w800,
                             letterSpacing: -0.3,
                           ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                         SizedBox(height: 2),
                         Text(
@@ -176,6 +201,8 @@ class OutletHeader extends StatelessWidget {
                             fontSize: 10,
                             fontWeight: FontWeight.w600,
                           ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ],
                     ),
