@@ -10,3 +10,4 @@ config/passwords.yaml
 *.local.yaml
 *.db
 *.log
+*.apk
