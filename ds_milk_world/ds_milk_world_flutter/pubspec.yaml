@@ -30,6 +30,7 @@ dependencies:
 
 
   cupertino_icons: ^1.0.5
+  http: ^1.2.0
 
 dev_dependencies:
   flutter_lints: '>=3.0.0 <7.0.0'

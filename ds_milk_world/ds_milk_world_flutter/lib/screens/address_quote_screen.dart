@@ -69,12 +69,15 @@ class _AddressQuoteScreenState extends State<AddressQuoteScreen> {
     setState(() {
       _selectedLat = loc.latitude;
       _selectedLng = loc.longitude;
+      final roadInfo = loc.roadDistanceText != null
+          ? '${loc.roadDistanceText} (~${loc.durationMinutes ?? 12} mins ETA)'
+          : '${loc.distanceKm} km from Auto Nagar';
       _quote = DeliveryQuote(
         serviceable: loc.isServiceable,
         distanceKm: loc.distanceKm,
         feePaise: loc.feePaise,
         message: loc.isServiceable
-            ? 'Serviceable (${loc.distanceKm} km from Auto Nagar • Rapido Parcel)'
+            ? 'Serviceable ($roadInfo • Rapido Bike Parcel)'
             : 'Delivery location is ${loc.distanceKm} km away. Maximum service radius is 5.0 km.',
       );
     });

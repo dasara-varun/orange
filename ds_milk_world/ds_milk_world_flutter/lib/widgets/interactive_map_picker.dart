@@ -1,6 +1,7 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
+import '../services/rapido_live_service.dart';
 
 class InteractiveMapPicker extends StatefulWidget {
   final double initialLat;
@@ -25,6 +26,9 @@ class MapLocation {
   final bool isServiceable;
   final int feePaise;
   final String nearestLandmark;
+  final String? roadDistanceText;
+  final int? durationMinutes;
+  final String? providerSource;
 
   MapLocation({
     required this.latitude,
@@ -33,6 +37,9 @@ class MapLocation {
     required this.isServiceable,
     required this.feePaise,
     required this.nearestLandmark,
+    this.roadDistanceText,
+    this.durationMinutes,
+    this.providerSource,
   });
 }
 
@@ -52,6 +59,13 @@ class _InteractiveMapPickerState extends State<InteractiveMapPicker> {
   late double _currentLng;
   bool _isDragging = false;
 
+  final TextEditingController _searchController = TextEditingController();
+  List<AddressSearchResult> _searchResults = [];
+  bool _isSearching = false;
+
+  RapidoLiveQuote? _liveQuote;
+  bool _isLoadingQuote = false;
+
   // Landmarks in Vijayawada
   final List<Map<String, dynamic>> _landmarks = [
     {'name': 'Auto Nagar Gate', 'lat': 16.4950, 'lng': 80.6650, 'sub': 'Outlet Location'},
@@ -66,6 +80,13 @@ class _InteractiveMapPickerState extends State<InteractiveMapPicker> {
     super.initState();
     _currentLat = widget.initialLat;
     _currentLng = widget.initialLng;
+    _updatePosition(_currentLat, _currentLng);
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   double _haversine(double lat1, double lon1, double lat2, double lon2) {
@@ -76,12 +97,6 @@ class _InteractiveMapPickerState extends State<InteractiveMapPicker> {
         cos(lat1 * pi / 180.0) * cos(lat2 * pi / 180.0) * sin(dLon / 2) * sin(dLon / 2);
     final c = 2 * atan2(sqrt(a), sqrt(1 - a));
     return r * c;
-  }
-
-  int _calculateFee(double dist) {
-    if (dist <= 2.0) return 3000;
-    final extra = dist - 2.0;
-    return 3000 + (extra * 1000).ceil();
   }
 
   String _findNearestLandmark(double lat, double lng) {
@@ -97,7 +112,28 @@ class _InteractiveMapPickerState extends State<InteractiveMapPicker> {
     return nearest;
   }
 
-  void _updatePosition(double lat, double lng) {
+  Future<void> _searchAddress(String query) async {
+    if (query.trim().isEmpty) {
+      setState(() => _searchResults = []);
+      return;
+    }
+    setState(() => _isSearching = true);
+    final results = await RapidoLiveService.searchAddress(query);
+    if (mounted) {
+      setState(() {
+        _searchResults = results;
+        _isSearching = false;
+      });
+    }
+  }
+
+  void _selectSearchResult(AddressSearchResult res) {
+    _searchController.text = res.title;
+    setState(() => _searchResults = []);
+    _updatePosition(res.latitude, res.longitude);
+  }
+
+  Future<void> _updatePosition(double lat, double lng) async {
     // Clamp to map bounds
     final clampedLat = lat.clamp(minLat, maxLat);
     final clampedLng = lng.clamp(minLng, maxLng);
@@ -105,28 +141,40 @@ class _InteractiveMapPickerState extends State<InteractiveMapPicker> {
     setState(() {
       _currentLat = clampedLat;
       _currentLng = clampedLng;
+      _isLoadingQuote = true;
     });
 
-    final dist = _haversine(outletLat, outletLng, clampedLat, clampedLng);
-    final serviceable = dist <= maxRadiusKm;
-    final fee = serviceable ? _calculateFee(dist) : 0;
     final landmark = _findNearestLandmark(clampedLat, clampedLng);
+    final quote = await RapidoLiveService.fetchLiveRapidoQuote(
+      dropLat: clampedLat,
+      dropLng: clampedLng,
+    );
 
-    widget.onLocationChanged(MapLocation(
-      latitude: double.parse(clampedLat.toStringAsFixed(4)),
-      longitude: double.parse(clampedLng.toStringAsFixed(4)),
-      distanceKm: double.parse(dist.toStringAsFixed(2)),
-      isServiceable: serviceable,
-      feePaise: fee,
-      nearestLandmark: landmark,
-    ));
+    if (mounted) {
+      setState(() {
+        _liveQuote = quote;
+        _isLoadingQuote = false;
+      });
+
+      widget.onLocationChanged(MapLocation(
+        latitude: double.parse(clampedLat.toStringAsFixed(4)),
+        longitude: double.parse(clampedLng.toStringAsFixed(4)),
+        distanceKm: quote.roadDistanceKm,
+        isServiceable: quote.isServiceable,
+        feePaise: quote.totalFeePaise,
+        nearestLandmark: landmark,
+        roadDistanceText: '${quote.roadDistanceKm} km road distance',
+        durationMinutes: quote.durationMinutes,
+        providerSource: quote.providerSource,
+      ));
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final dist = _haversine(outletLat, outletLng, _currentLat, _currentLng);
-    final isServiceable = dist <= maxRadiusKm;
-    final fee = isServiceable ? _calculateFee(dist) : 0;
+    final isServiceable = _liveQuote?.isServiceable ?? (dist <= maxRadiusKm);
+    final fee = _liveQuote?.totalFeePaise ?? 3000;
 
     return Container(
       decoration: BoxDecoration(
@@ -146,11 +194,11 @@ class _InteractiveMapPickerState extends State<InteractiveMapPicker> {
             ),
             child: Row(
               children: [
-                const Icon(Icons.map_outlined, size: 18, color: AppTheme.cocoa),
+                const Icon(Icons.delivery_dining, size: 18, color: AppTheme.cocoa),
                 const SizedBox(width: 8),
                 const Expanded(
                   child: Text(
-                    'Interactive Vijayawada Map Pin Drop',
+                    'Real-Time Rapido Route & Pin Drop',
                     style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: AppTheme.cocoa),
                   ),
                 ),
@@ -161,7 +209,9 @@ class _InteractiveMapPickerState extends State<InteractiveMapPicker> {
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Text(
-                    isServiceable ? '${dist.toStringAsFixed(1)} km • ₹${fee ~/ 100} Rapido' : 'Out of 5 km Range',
+                    isServiceable
+                        ? '₹${fee ~/ 100} • ${_liveQuote?.roadDistanceKm ?? dist.toStringAsFixed(1)} km road'
+                        : 'Out of 5 km Range',
                     style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Colors.white),
                   ),
                 ),
@@ -169,14 +219,89 @@ class _InteractiveMapPickerState extends State<InteractiveMapPicker> {
             ),
           ),
 
+          // Customer Address Search Bar (Typing method)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(10, 10, 10, 6),
+            child: TextField(
+              controller: _searchController,
+              onChanged: _searchAddress,
+              decoration: InputDecoration(
+                hintText: 'Type your address / locality (e.g. Benz Circle)...',
+                prefixIcon: const Icon(Icons.search, size: 18, color: AppTheme.muted),
+                suffixIcon: _isSearching
+                    ? const Padding(
+                        padding: EdgeInsets.all(12),
+                        child: SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2)),
+                      )
+                    : (_searchController.text.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(Icons.clear, size: 16),
+                            onPressed: () {
+                              _searchController.clear();
+                              setState(() => _searchResults = []);
+                            },
+                          )
+                        : null),
+                isDense: true,
+                filled: true,
+                fillColor: const Color(0xFFF9F6F0),
+                contentPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: const BorderSide(color: AppTheme.border),
+                ),
+              ),
+            ),
+          ),
+
+          // Live Search Suggestions Dropdown
+          if (_searchResults.isNotEmpty)
+            Container(
+              margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+              constraints: const BoxConstraints(maxHeight: 160),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: AppTheme.border),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.08),
+                    blurRadius: 6,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
+              ),
+              child: ListView.separated(
+                shrinkWrap: true,
+                padding: EdgeInsets.zero,
+                itemCount: _searchResults.length,
+                separatorBuilder: (_, __) => const Divider(height: 1),
+                itemBuilder: (ctx, idx) {
+                  final item = _searchResults[idx];
+                  return ListTile(
+                    dense: true,
+                    leading: const Icon(Icons.location_on, size: 16, color: AppTheme.rose),
+                    title: Text(item.title, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+                    subtitle: Text(
+                      item.fullAddress,
+                      style: const TextStyle(fontSize: 10, color: AppTheme.muted),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    onTap: () => _selectSearchResult(item),
+                  );
+                },
+              ),
+            ),
+
           // Map Canvas
           ClipRRect(
             child: SizedBox(
-              height: 230,
+              height: 220,
               child: LayoutBuilder(
                 builder: (context, constraints) {
                   final w = constraints.maxWidth;
-                  const h = 230.0;
+                  const h = 220.0;
 
                   // Convert Lat/Lng to pixel X/Y
                   double toX(double lng) => ((lng - minLng) / (maxLng - minLng)) * w;
@@ -197,17 +322,17 @@ class _InteractiveMapPickerState extends State<InteractiveMapPicker> {
                       final lng = toLng(details.localPosition.dx);
                       _updatePosition(lat, lng);
                     },
+                    onPanStart: (_) => setState(() => _isDragging = true),
                     onPanUpdate: (details) {
                       final lat = toLat(details.localPosition.dy);
                       final lng = toLng(details.localPosition.dx);
                       _updatePosition(lat, lng);
                     },
-                    onPanStart: (_) => setState(() => _isDragging = true),
                     onPanEnd: (_) => setState(() => _isDragging = false),
                     onPanCancel: () => setState(() => _isDragging = false),
                     child: Stack(
                       children: [
-                        // Custom Painted Map Background (Waterways, Roads, 5km circle)
+                        // Custom Painted Map Background
                         CustomPaint(
                           size: Size(w, h),
                           painter: _VijayawadaMapPainter(
@@ -329,7 +454,7 @@ class _InteractiveMapPickerState extends State<InteractiveMapPicker> {
                               borderRadius: BorderRadius.circular(4),
                             ),
                             child: const Text(
-                              '👆 Drag map to adjust pin position',
+                              '👆 Drag map or type address above',
                               style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w600),
                             ),
                           ),
@@ -390,7 +515,7 @@ class _InteractiveMapPickerState extends State<InteractiveMapPicker> {
             ),
           ),
 
-          // Rapido Bike Parcel Fare Card
+          // Real-Time Rapido Bike Parcel Fare Card
           Container(
             margin: const EdgeInsets.fromLTRB(10, 0, 10, 10),
             padding: const EdgeInsets.all(12),
@@ -402,15 +527,15 @@ class _InteractiveMapPickerState extends State<InteractiveMapPicker> {
             child: Row(
               children: [
                 Container(
-                  width: 40,
-                  height: 40,
+                  width: 44,
+                  height: 44,
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(color: AppTheme.border),
                   ),
                   child: const Center(
-                    child: Text('🛵', style: TextStyle(fontSize: 20)),
+                    child: Text('🛵', style: TextStyle(fontSize: 22)),
                   ),
                 ),
                 const SizedBox(width: 10),
@@ -421,25 +546,47 @@ class _InteractiveMapPickerState extends State<InteractiveMapPicker> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Text(
-                            'Rapido Bike Parcel',
-                            style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13, color: AppTheme.cocoa),
+                          Row(
+                            children: [
+                              const Text(
+                                'Rapido Bike Parcel',
+                                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13, color: AppTheme.cocoa),
+                              ),
+                              const SizedBox(width: 6),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                                decoration: BoxDecoration(
+                                  color: AppTheme.saffronDark,
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: const Text(
+                                  'REAL-TIME',
+                                  style: TextStyle(fontSize: 8, fontWeight: FontWeight.w800, color: Colors.white),
+                                ),
+                              ),
+                            ],
                           ),
-                          Text(
-                            isServiceable ? '₹${fee ~/ 100}' : 'Blocked',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w900,
-                              fontSize: 16,
-                              color: isServiceable ? AppTheme.cocoa : AppTheme.error,
-                            ),
-                          ),
+                          _isLoadingQuote
+                              ? const SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.saffronDark),
+                                )
+                              : Text(
+                                  isServiceable ? '₹${fee ~/ 100}' : 'Blocked',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w900,
+                                    fontSize: 16,
+                                    color: isServiceable ? AppTheme.cocoa : AppTheme.error,
+                                  ),
+                                ),
                         ],
                       ),
-                      const SizedBox(height: 2),
+                      const SizedBox(height: 3),
                       Text(
                         isServiceable
-                            ? '8-12m pickup • ₹30 base (2 km) + ₹10/km (${dist.toStringAsFixed(1)} km)'
-                            : 'Exceeds 5.0 km freshness radius limit',
+                            ? '${_liveQuote?.roadDistanceKm ?? dist.toStringAsFixed(1)} km road (~${_liveQuote?.durationMinutes ?? 10}m ETA) • Base ₹30 + Dist ₹${((_liveQuote?.distanceFarePaise ?? 0) / 100).ceil()} + Plat ₹3'
+                            : 'Exceeds 5.0 km freshness radius limit from Auto Nagar',
                         style: TextStyle(fontSize: 11, color: isServiceable ? AppTheme.muted : AppTheme.error),
                       ),
                     ],
@@ -521,13 +668,11 @@ class _VijayawadaMapPainter extends CustomPainter {
     );
 
     // 4. 5.0 km Service Radius Circle
-    // Soft transparent fill
     final radiusFillPaint = Paint()
       ..color = const Color(0xFF72B7A1).withValues(alpha: 0.12)
       ..style = PaintingStyle.fill;
     canvas.drawCircle(Offset(outletX, outletY), radiusPixels, radiusFillPaint);
 
-    // Dashed / solid boundary border
     final radiusBorderPaint = Paint()
       ..color = const Color(0xFFCE8822).withValues(alpha: 0.6)
       ..style = PaintingStyle.stroke
