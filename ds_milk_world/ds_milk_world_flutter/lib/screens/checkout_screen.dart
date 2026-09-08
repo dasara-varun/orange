@@ -98,15 +98,25 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
+                  child: Image.asset(
+                    'assets/images/ds_logo_square.png',
+                    width: 72,
+                    height: 72,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+                const SizedBox(height: 20),
                 const SizedBox(
-                  width: 50,
-                  height: 50,
+                  width: 36,
+                  height: 36,
                   child: CircularProgressIndicator(
                     color: AppTheme.saffronDark,
                     strokeWidth: 3,
                   ),
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 20),
                 Text(
                   _processingStep ?? 'Processing...',
                   textAlign: TextAlign.center,
@@ -131,7 +141,21 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Payment & Handoff'),
+        title: Row(
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(6),
+              child: Image.asset(
+                'assets/images/ds_logo_icon.png',
+                width: 22,
+                height: 22,
+                fit: BoxFit.cover,
+              ),
+            ),
+            const SizedBox(width: 8),
+            const Text('Payment & Handoff'),
+          ],
+        ),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -152,13 +176,27 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        'Order #${order.orderNumber}',
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w800,
-                          color: AppTheme.cocoa,
-                        ),
+                      Row(
+                        children: [
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(4),
+                            child: Image.asset(
+                              'assets/images/ds_logo_icon.png',
+                              width: 18,
+                              height: 18,
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            'Order #${order.orderNumber}',
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w800,
+                              color: AppTheme.cocoa,
+                            ),
+                          ),
+                        ],
                       ),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),

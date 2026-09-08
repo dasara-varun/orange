@@ -56,6 +56,15 @@ class CategoryRail extends StatelessWidget {
           if (index == 0) {
             final isSelected = selectedCategory == 'all';
             return ChoiceChip(
+              avatar: ClipRRect(
+                borderRadius: BorderRadius.circular(6),
+                child: Image.asset(
+                  'assets/images/ds_logo_icon.png',
+                  width: 18,
+                  height: 18,
+                  fit: BoxFit.cover,
+                ),
+              ),
               label: const Text('All Items'),
               selected: isSelected,
               selectedColor: AppTheme.cocoa,
@@ -78,11 +87,19 @@ class CategoryRail extends StatelessWidget {
 
           return ChoiceChip(
             avatar: Container(
-              width: 10,
-              height: 10,
+              width: 18,
+              height: 18,
               decoration: BoxDecoration(
-                color: accentColor,
                 shape: BoxShape.circle,
+                border: Border.all(color: accentColor, width: 1.5),
+              ),
+              child: ClipOval(
+                child: Image.asset(
+                  'assets/images/ds_logo_icon.png',
+                  width: 18,
+                  height: 18,
+                  fit: BoxFit.cover,
+                ),
               ),
             ),
             label: Text(cat.name),

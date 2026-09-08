@@ -34,17 +34,24 @@ class OutletHeader extends StatelessWidget {
               Row(
                 children: [
                   Container(
-                    width: 44,
-                    height: 44,
+                    width: 46,
+                    height: 46,
                     decoration: BoxDecoration(
-                      color: AppTheme.cream,
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(color: AppTheme.saffron, width: 1.5),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppTheme.cocoa.withValues(alpha: 0.1),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
                     ),
-                    child: const Center(
-                      child: Text(
-                        '🥛',
-                        style: TextStyle(fontSize: 22),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(10.5),
+                      child: Image.asset(
+                        'assets/images/ds_logo_square.png',
+                        fit: BoxFit.cover,
                       ),
                     ),
                   ),
@@ -117,6 +124,67 @@ class OutletHeader extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
+          // Visual Brand Banner
+          Container(
+            height: 76,
+            width: double.infinity,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: AppTheme.border),
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(9),
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  Image.asset(
+                    'assets/images/ds_logo_banner.png',
+                    fit: BoxFit.cover,
+                  ),
+                  Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.centerLeft,
+                        end: Alignment.centerRight,
+                        colors: [
+                          AppTheme.cocoa.withValues(alpha: 0.82),
+                          AppTheme.cocoa.withValues(alpha: 0.25),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          'Pure Dairy & Fresh Shakes',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: -0.3,
+                          ),
+                        ),
+                        SizedBox(height: 2),
+                        Text(
+                          'Handcrafted Faloodas • 100% Pure Milk • Auto Nagar',
+                          style: TextStyle(
+                            color: Color(0xFFFFF1D6),
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
           InkWell(
             onTap: () => _showGuaranteeDialog(context),
             borderRadius: BorderRadius.circular(8),

@@ -148,7 +148,21 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Order #${order.orderNumber}'),
+        title: Row(
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(6),
+              child: Image.asset(
+                'assets/images/ds_logo_icon.png',
+                width: 22,
+                height: 22,
+                fit: BoxFit.cover,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Text('Order #${order.orderNumber}'),
+          ],
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),

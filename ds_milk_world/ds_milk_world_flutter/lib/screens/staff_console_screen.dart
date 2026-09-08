@@ -446,6 +446,16 @@ class _StaffConsoleScreenState extends State<StaffConsoleScreen> with SingleTick
         ),
         title: Row(
           children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(6),
+              child: Image.asset(
+                'assets/images/ds_logo_icon.png',
+                width: 24,
+                height: 24,
+                fit: BoxFit.cover,
+              ),
+            ),
+            const SizedBox(width: 8),
             const Text('Staff Ops Console'),
             const SizedBox(width: 8),
             Container(

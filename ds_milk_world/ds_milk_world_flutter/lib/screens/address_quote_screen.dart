@@ -192,11 +192,19 @@ class _AddressQuoteScreenState extends State<AddressQuoteScreen> {
                   borderRadius: BorderRadius.circular(10),
                   border: Border.all(color: AppTheme.border),
                 ),
-                child: const Row(
+                child: Row(
                   children: [
-                    Icon(Icons.store, color: AppTheme.cocoa, size: 20),
-                    SizedBox(width: 8),
-                    Expanded(
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(6),
+                      child: Image.asset(
+                        'assets/images/ds_logo_icon.png',
+                        width: 24,
+                        height: 24,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    const Expanded(
                       child: Text(
                         'Delivering from DS Milk World, Auto Nagar Gate, Bandar Road, Vijayawada (Max 5.0 km radius)',
                         style: TextStyle(
