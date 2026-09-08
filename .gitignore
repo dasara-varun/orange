@@ -1,0 +1,12 @@
+# Dart / Flutter / Serverpod
+.dart_tool/
+.packages
+build/
+.pub-cache/
+.pub/
+
+# Secrets / local configs
+config/passwords.yaml
+*.local.yaml
+*.db
+*.log
