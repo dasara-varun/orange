@@ -3,6 +3,7 @@ import 'package:ds_milk_world_client/ds_milk_world_client.dart';
 import '../theme/app_theme.dart';
 import '../state/cart_state.dart';
 import '../services/api_service.dart';
+import '../widgets/interactive_map_picker.dart';
 import 'checkout_screen.dart';
 
 class AddressQuoteScreen extends StatefulWidget {
@@ -18,6 +19,9 @@ class _AddressQuoteScreenState extends State<AddressQuoteScreen> {
   final _nameController = TextEditingController(text: 'Ravi Teja');
   final _addressController = TextEditingController(text: 'Flat 301, Sri Krishna Residency, Auto Nagar');
   final _landmarkController = TextEditingController(text: 'Near Auto Nagar Gate');
+
+  // Interactive Map Pin toggle
+  bool _useMapPicker = true;
 
   // Pre-configured coordinate presets in Vijayawada for testing & ease of use
   final List<Map<String, dynamic>> _locationPresets = [
@@ -60,6 +64,21 @@ class _AddressQuoteScreenState extends State<AddressQuoteScreen> {
   bool _isLoadingQuote = false;
   DeliveryQuote? _quote;
   bool _isSubmitting = false;
+
+  void _onMapLocationChanged(MapLocation loc) {
+    setState(() {
+      _selectedLat = loc.latitude;
+      _selectedLng = loc.longitude;
+      _quote = DeliveryQuote(
+        serviceable: loc.isServiceable,
+        distanceKm: loc.distanceKm,
+        feePaise: loc.feePaise,
+        message: loc.isServiceable
+            ? 'Serviceable (${loc.distanceKm} km from Auto Nagar • Rapido Parcel)'
+            : 'Delivery location is ${loc.distanceKm} km away. Maximum service radius is 5.0 km.',
+      );
+    });
+  }
 
   @override
   void initState() {
@@ -227,50 +246,102 @@ class _AddressQuoteScreenState extends State<AddressQuoteScreen> {
               ),
               const SizedBox(height: 20),
 
-              const Text(
-                'Delivery Location / Preset',
-                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: AppTheme.cocoa),
-              ),
-              const SizedBox(height: 6),
-              const Text(
-                'Select a delivery neighborhood to test Haversine distance & fee calculation:',
-                style: TextStyle(fontSize: 12, color: AppTheme.muted),
-              ),
-              const SizedBox(height: 10),
-              Container(
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: AppTheme.border),
-                ),
-                child: Column(
-                  children: List.generate(_locationPresets.length, (idx) {
-                    final preset = _locationPresets[idx];
-                    final isSel = _selectedPresetIndex == idx;
-                    return RadioListTile<int>(
-                      value: idx,
-                      groupValue: _selectedPresetIndex,
-                      activeColor: AppTheme.saffronDark,
-                      dense: true,
-                      title: Text(
-                        preset['name'] as String,
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: isSel ? FontWeight.w700 : FontWeight.w500,
-                          color: AppTheme.cocoa,
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Delivery Location Pin',
+                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: AppTheme.cocoa),
+                  ),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      InkWell(
+                        onTap: () => setState(() => _useMapPicker = true),
+                        borderRadius: BorderRadius.circular(6),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                          decoration: BoxDecoration(
+                            color: _useMapPicker ? AppTheme.cream : Colors.grey[100],
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(color: _useMapPicker ? AppTheme.saffronDark : AppTheme.border),
+                          ),
+                          child: const Row(
+                            children: [
+                              Icon(Icons.map, size: 14, color: AppTheme.cocoa),
+                              SizedBox(width: 4),
+                              Text('Map Pin', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.cocoa)),
+                            ],
+                          ),
                         ),
                       ),
-                      subtitle: Text(
-                        'Coordinates: ${preset['lat']}, ${preset['lng']}',
-                        style: const TextStyle(fontSize: 11, color: AppTheme.muted),
+                      const SizedBox(width: 6),
+                      InkWell(
+                        onTap: () => setState(() => _useMapPicker = false),
+                        borderRadius: BorderRadius.circular(6),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                          decoration: BoxDecoration(
+                            color: !_useMapPicker ? AppTheme.cream : Colors.grey[100],
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(color: !_useMapPicker ? AppTheme.saffronDark : AppTheme.border),
+                          ),
+                          child: const Row(
+                            children: [
+                              Icon(Icons.list, size: 14, color: AppTheme.cocoa),
+                              SizedBox(width: 4),
+                              Text('Presets', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.cocoa)),
+                            ],
+                          ),
+                        ),
                       ),
-                      onChanged: (val) {
-                        if (val != null) _onPresetChanged(val);
-                      },
-                    );
-                  }),
-                ),
+                    ],
+                  ),
+                ],
               ),
+              const SizedBox(height: 10),
+              if (_useMapPicker)
+                InteractiveMapPicker(
+                  initialLat: _selectedLat,
+                  initialLng: _selectedLng,
+                  onLocationChanged: _onMapLocationChanged,
+                )
+              else ...[
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: AppTheme.border),
+                  ),
+                  child: Column(
+                    children: List.generate(_locationPresets.length, (idx) {
+                      final preset = _locationPresets[idx];
+                      final isSel = _selectedPresetIndex == idx;
+                      return RadioListTile<int>(
+                        value: idx,
+                        groupValue: _selectedPresetIndex,
+                        activeColor: AppTheme.saffronDark,
+                        dense: true,
+                        title: Text(
+                          preset['name'] as String,
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: isSel ? FontWeight.w700 : FontWeight.w500,
+                            color: AppTheme.cocoa,
+                          ),
+                        ),
+                        subtitle: Text(
+                          'Coordinates: ${preset['lat']}, ${preset['lng']}',
+                          style: const TextStyle(fontSize: 11, color: AppTheme.muted),
+                        ),
+                        onChanged: (val) {
+                          if (val != null) _onPresetChanged(val);
+                        },
+                      );
+                    }),
+                  ),
+                ),
+              ],
               const SizedBox(height: 16),
 
               TextFormField(
