@@ -1,5 +1,9 @@
+import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
+import 'package:geolocator/geolocator.dart';
 import '../theme/app_theme.dart';
 import '../services/rapido_live_service.dart';
 
@@ -49,24 +53,27 @@ class _InteractiveMapPickerState extends State<InteractiveMapPicker> {
   static const double outletLng = 80.6650;
   static const double maxRadiusKm = 5.0;
 
-  // Geographic bounds for Vijayawada map canvas
-  static const double minLat = 16.4500;
-  static const double maxLat = 16.5400;
-  static const double minLng = 80.6000;
-  static const double maxLng = 80.7200;
+  // Vijayawada geographic bounds for fallback clamping
+  static const double minLat = 16.3500;
+  static const double maxLat = 16.6500;
+  static const double minLng = 80.5000;
+  static const double maxLng = 80.8000;
 
   late double _currentLat;
   late double _currentLng;
   bool _isDragging = false;
+  bool _isLocating = false;
 
+  final MapController _mapController = MapController();
   final TextEditingController _searchController = TextEditingController();
   List<AddressSearchResult> _searchResults = [];
   bool _isSearching = false;
 
   RapidoLiveQuote? _liveQuote;
   bool _isLoadingQuote = false;
+  Timer? _debounceTimer;
 
-  // Landmarks in Vijayawada
+  // Key Vijayawada landmarks for rapid reference
   final List<Map<String, dynamic>> _landmarks = [
     {'name': 'Auto Nagar Gate', 'lat': 16.4950, 'lng': 80.6650, 'sub': 'Outlet Location'},
     {'name': 'Patamata', 'lat': 16.4980, 'lng': 80.6500, 'sub': '2.1 km'},
@@ -80,12 +87,14 @@ class _InteractiveMapPickerState extends State<InteractiveMapPicker> {
     super.initState();
     _currentLat = widget.initialLat;
     _currentLng = widget.initialLng;
-    _updatePosition(_currentLat, _currentLng);
+    _fetchQuoteForPosition(_currentLat, _currentLng);
   }
 
   @override
   void dispose() {
+    _debounceTimer?.cancel();
     _searchController.dispose();
+    _mapController.dispose();
     super.dispose();
   }
 
@@ -130,11 +139,114 @@ class _InteractiveMapPickerState extends State<InteractiveMapPicker> {
   void _selectSearchResult(AddressSearchResult res) {
     _searchController.text = res.title;
     setState(() => _searchResults = []);
-    _updatePosition(res.latitude, res.longitude);
+    _moveToLocation(res.latitude, res.longitude, zoom: 15.5);
   }
 
-  Future<void> _updatePosition(double lat, double lng) async {
-    // Clamp to map bounds
+  void _moveToLocation(double lat, double lng, {double? zoom}) {
+    final clampedLat = lat.clamp(minLat, maxLat);
+    final clampedLng = lng.clamp(minLng, maxLng);
+    _mapController.move(
+      LatLng(clampedLat, clampedLng),
+      zoom ?? _mapController.camera.zoom,
+    );
+    _fetchQuoteForPosition(clampedLat, clampedLng);
+  }
+
+  void _onMapPanned(LatLng center) {
+    setState(() {
+      _isDragging = true;
+      _currentLat = center.latitude;
+      _currentLng = center.longitude;
+    });
+
+    _debounceTimer?.cancel();
+    _debounceTimer = Timer(const Duration(milliseconds: 400), () {
+      if (mounted) {
+        setState(() => _isDragging = false);
+        _fetchQuoteForPosition(center.latitude, center.longitude);
+      }
+    });
+  }
+
+  Future<void> _getCurrentLocation() async {
+    setState(() => _isLocating = true);
+    try {
+      final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Location services are turned off. Please enable GPS.'),
+              backgroundColor: AppTheme.error,
+            ),
+          );
+        }
+        return;
+      }
+
+      var permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Location permission denied.'),
+                backgroundColor: AppTheme.error,
+              ),
+            );
+          }
+          return;
+        }
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Location permission permanently denied. Enable it in App Settings.'),
+              backgroundColor: AppTheme.error,
+            ),
+          );
+        }
+        return;
+      }
+
+      final position = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+          timeLimit: Duration(seconds: 8),
+        ),
+      );
+
+      if (mounted) {
+        _searchController.text = 'My Current GPS Location';
+        _moveToLocation(position.latitude, position.longitude, zoom: 16.0);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('📍 Centered on your exact doorstep GPS location!'),
+            backgroundColor: AppTheme.mint,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Could not get GPS location: $e'),
+            backgroundColor: AppTheme.error,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLocating = false);
+      }
+    }
+  }
+
+  Future<void> _fetchQuoteForPosition(double lat, double lng) async {
     final clampedLat = lat.clamp(minLat, maxLat);
     final clampedLng = lng.clamp(minLng, maxLng);
 
@@ -198,7 +310,7 @@ class _InteractiveMapPickerState extends State<InteractiveMapPicker> {
                 const SizedBox(width: 8),
                 const Expanded(
                   child: Text(
-                    'Real-Time Rapido Route & Pin Drop',
+                    'Live OpenStreetMap & Rapido Rate',
                     style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: AppTheme.cocoa),
                   ),
                 ),
@@ -294,190 +406,256 @@ class _InteractiveMapPickerState extends State<InteractiveMapPicker> {
               ),
             ),
 
-          // Map Canvas
+          // Live OpenStreetMap Canvas
           ClipRRect(
             child: SizedBox(
-              height: 220,
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  final w = constraints.maxWidth;
-                  const h = 220.0;
+              height: 250,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  FlutterMap(
+                    mapController: _mapController,
+                    options: MapOptions(
+                      initialCenter: LatLng(widget.initialLat, widget.initialLng),
+                      initialZoom: 14.5,
+                      minZoom: 10.0,
+                      maxZoom: 18.0,
+                      onPositionChanged: (MapCamera camera, bool hasGesture) {
+                        if (hasGesture) {
+                          _onMapPanned(camera.center);
+                        }
+                      },
+                      onTap: (tapPosition, point) {
+                        _moveToLocation(point.latitude, point.longitude);
+                      },
+                    ),
+                    children: [
+                      // OpenStreetMap Standard Raster Tile Layer
+                      TileLayer(
+                        urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                        userAgentPackageName: 'com.example.ds_milk_world_flutter',
+                      ),
 
-                  // Convert Lat/Lng to pixel X/Y
-                  double toX(double lng) => ((lng - minLng) / (maxLng - minLng)) * w;
-                  double toY(double lat) => (1.0 - (lat - minLat) / (maxLat - minLat)) * h;
-
-                  // Convert pixel X/Y back to Lat/Lng
-                  double toLng(double x) => minLng + (x / w) * (maxLng - minLng);
-                  double toLat(double y) => maxLat - (y / h) * (maxLat - minLat);
-
-                  final pinX = toX(_currentLng);
-                  final pinY = toY(_currentLat);
-                  final outletX = toX(outletLng);
-                  final outletY = toY(outletLat);
-
-                  return GestureDetector(
-                    onTapDown: (details) {
-                      final lat = toLat(details.localPosition.dy);
-                      final lng = toLng(details.localPosition.dx);
-                      _updatePosition(lat, lng);
-                    },
-                    onPanStart: (_) => setState(() => _isDragging = true),
-                    onPanUpdate: (details) {
-                      final lat = toLat(details.localPosition.dy);
-                      final lng = toLng(details.localPosition.dx);
-                      _updatePosition(lat, lng);
-                    },
-                    onPanEnd: (_) => setState(() => _isDragging = false),
-                    onPanCancel: () => setState(() => _isDragging = false),
-                    child: Stack(
-                      children: [
-                        // Custom Painted Map Background
-                        CustomPaint(
-                          size: Size(w, h),
-                          painter: _VijayawadaMapPainter(
-                            outletX: outletX,
-                            outletY: outletY,
-                            radiusPixels: (maxRadiusKm / 6.0) * (w / 2.5),
+                      // 5.0 km Freshness Service Radius Circle
+                      CircleLayer(
+                        circles: [
+                          CircleMarker(
+                            point: const LatLng(outletLat, outletLng),
+                            radius: maxRadiusKm * 1000, // 5000 meters
+                            useRadiusInMeter: true,
+                            color: const Color(0xFF72B7A1).withValues(alpha: 0.15),
+                            borderColor: const Color(0xFFCE8822).withValues(alpha: 0.8),
+                            borderStrokeWidth: 2,
                           ),
-                        ),
+                        ],
+                      ),
 
-                        // Landmark labels
-                        ..._landmarks.map((lm) {
-                          final lx = toX(lm['lng'] as double);
-                          final ly = toY(lm['lat'] as double);
-                          final isOutlet = lm['name'] == 'Auto Nagar Gate';
-                          return Positioned(
-                            left: lx - 30,
-                            top: ly + (isOutlet ? 14 : 6),
-                            child: IgnorePointer(
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withValues(alpha: 0.85),
-                                  borderRadius: BorderRadius.circular(4),
-                                  border: Border.all(color: Colors.grey.withValues(alpha: 0.3), width: 0.5),
-                                ),
-                                child: Text(
-                                  lm['name'] as String,
-                                  style: TextStyle(
-                                    fontSize: 9,
-                                    fontWeight: isOutlet ? FontWeight.w800 : FontWeight.w600,
-                                    color: isOutlet ? AppTheme.saffronDark : AppTheme.cocoa,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          );
-                        }),
-
-                        // Outlet Location Pin (Auto Nagar)
-                        Positioned(
-                          left: outletX - 14,
-                          top: outletY - 14,
-                          child: IgnorePointer(
-                            child: Container(
-                              width: 28,
-                              height: 28,
-                              decoration: BoxDecoration(
-                                color: AppTheme.saffron,
-                                shape: BoxShape.circle,
-                                border: Border.all(color: AppTheme.cocoa, width: 2),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withValues(alpha: 0.2),
-                                    blurRadius: 4,
-                                    offset: const Offset(0, 2),
-                                  ),
-                                ],
-                              ),
-                              child: const Center(
-                                child: Text('🥛', style: TextStyle(fontSize: 14)),
-                              ),
-                            ),
-                          ),
-                        ),
-
-                        // User Selected Delivery Pin (Animated Lift & Drop like Rapido)
-                        Positioned(
-                          left: pinX - 16,
-                          top: pinY - (_isDragging ? 44 : 32),
-                          child: IgnorePointer(
+                      // Outlet Marker (DS Milk World Auto Nagar)
+                      MarkerLayer(
+                        markers: [
+                          Marker(
+                            point: const LatLng(outletLat, outletLng),
+                            width: 100,
+                            height: 52,
+                            alignment: Alignment.topCenter,
                             child: Column(
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                   decoration: BoxDecoration(
-                                    color: isServiceable ? AppTheme.cocoa : AppTheme.error,
+                                    color: AppTheme.saffronDark,
                                     borderRadius: BorderRadius.circular(4),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.black.withValues(alpha: _isDragging ? 0.3 : 0.15),
-                                        blurRadius: _isDragging ? 8 : 4,
-                                        offset: Offset(0, _isDragging ? 6 : 2),
-                                      ),
+                                    boxShadow: const [
+                                      BoxShadow(color: Colors.black26, blurRadius: 2, offset: Offset(0, 1)),
                                     ],
                                   ),
-                                  child: Text(
-                                    _isDragging
-                                        ? 'Release to Set Drop'
-                                        : (isServiceable ? 'Drop Here' : 'Out of range'),
-                                    style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold),
+                                  child: const Text(
+                                    'DS Outlet',
+                                    style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w800),
                                   ),
                                 ),
-                                Icon(
-                                  Icons.location_on,
-                                  color: isServiceable ? AppTheme.rose : AppTheme.error,
-                                  size: _isDragging ? 38 : 32,
-                                  shadows: [
-                                    Shadow(
-                                      color: Colors.black.withValues(alpha: _isDragging ? 0.4 : 0.2),
-                                      blurRadius: _isDragging ? 8 : 4,
-                                      offset: Offset(0, _isDragging ? 6 : 2),
-                                    ),
-                                  ],
+                                Container(
+                                  width: 26,
+                                  height: 26,
+                                  decoration: BoxDecoration(
+                                    color: AppTheme.saffron,
+                                    shape: BoxShape.circle,
+                                    border: Border.all(color: Colors.white, width: 2),
+                                    boxShadow: const [
+                                      BoxShadow(color: Colors.black26, blurRadius: 4, offset: Offset(0, 2)),
+                                    ],
+                                  ),
+                                  child: const Center(
+                                    child: Text('🥛', style: TextStyle(fontSize: 13)),
+                                  ),
                                 ),
                               ],
                             ),
                           ),
-                        ),
+                        ],
+                      ),
+                    ],
+                  ),
 
-                        // Map hint overlay
-                        Positioned(
-                          left: 8,
-                          bottom: 8,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  // Fixed Center Delivery Pin (Lifts up on drag like Rapido)
+                  IgnorePointer(
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 150),
+                      transform: Matrix4.translationValues(0, _isDragging ? -20 : -10, 0),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                             decoration: BoxDecoration(
-                              color: Colors.black.withValues(alpha: 0.65),
-                              borderRadius: BorderRadius.circular(4),
+                              color: isServiceable ? AppTheme.cocoa : AppTheme.error,
+                              borderRadius: BorderRadius.circular(5),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: _isDragging ? 0.35 : 0.2),
+                                  blurRadius: _isDragging ? 8 : 4,
+                                  offset: Offset(0, _isDragging ? 6 : 2),
+                                ),
+                              ],
                             ),
-                            child: const Text(
-                              '👆 Drag map or type address above',
-                              style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w600),
+                            child: Text(
+                              _isDragging
+                                  ? 'Pan to Delivery Spot'
+                                  : (isServiceable ? 'Deliver Here' : 'Out of 5 km Limit'),
+                              style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
                             ),
                           ),
-                        ),
+                          Icon(
+                            Icons.location_on,
+                            color: isServiceable ? AppTheme.rose : AppTheme.error,
+                            size: _isDragging ? 42 : 36,
+                            shadows: [
+                              Shadow(
+                                color: Colors.black.withValues(alpha: _isDragging ? 0.4 : 0.2),
+                                blurRadius: _isDragging ? 8 : 4,
+                                offset: Offset(0, _isDragging ? 6 : 2),
+                              ),
+                            ],
+                          ),
+                          // Pin ground shadow
+                          Container(
+                            width: _isDragging ? 12 : 8,
+                            height: 4,
+                            decoration: BoxDecoration(
+                              color: Colors.black.withValues(alpha: _isDragging ? 0.15 : 0.35),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
 
-                        // Reset to Outlet GPS Button
-                        Positioned(
-                          right: 8,
-                          bottom: 8,
-                          child: FloatingActionButton.small(
-                            heroTag: 'map_locate_btn',
-                            backgroundColor: Colors.white,
-                            foregroundColor: AppTheme.cocoa,
-                            elevation: 2,
-                            tooltip: 'Center on Auto Nagar',
-                            onPressed: () => _updatePosition(16.5020, 80.6680),
-                            child: const Icon(Icons.my_location, size: 18),
+                  // Map drag instruction & OpenStreetMap attribution
+                  Positioned(
+                    left: 8,
+                    bottom: 8,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.65),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: const Text(
+                        'Map: © OpenStreetMap • Drag / Tap pin',
+                        style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                  ),
+
+                  // Top right: Zoom in / Zoom out buttons
+                  Positioned(
+                    right: 8,
+                    top: 8,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(6),
+                            boxShadow: const [
+                              BoxShadow(color: Colors.black26, blurRadius: 4, offset: Offset(0, 1)),
+                            ],
+                          ),
+                          child: Column(
+                            children: [
+                              InkWell(
+                                onTap: () {
+                                  _mapController.move(
+                                    _mapController.camera.center,
+                                    (_mapController.camera.zoom + 1).clamp(10.0, 18.0),
+                                  );
+                                },
+                                child: const Padding(
+                                  padding: EdgeInsets.all(6),
+                                  child: Icon(Icons.add, size: 18, color: AppTheme.cocoa),
+                                ),
+                              ),
+                              const Divider(height: 1, thickness: 0.5),
+                              InkWell(
+                                onTap: () {
+                                  _mapController.move(
+                                    _mapController.camera.center,
+                                    (_mapController.camera.zoom - 1).clamp(10.0, 18.0),
+                                  );
+                                },
+                                child: const Padding(
+                                  padding: EdgeInsets.all(6),
+                                  child: Icon(Icons.remove, size: 18, color: AppTheme.cocoa),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ],
                     ),
-                  );
-                },
+                  ),
+
+                  // Bottom right: GPS & Center on Outlet Buttons
+                  Positioned(
+                    right: 8,
+                    bottom: 8,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // Center on Auto Nagar Outlet
+                        FloatingActionButton.small(
+                          heroTag: 'center_outlet_btn',
+                          backgroundColor: Colors.white,
+                          foregroundColor: AppTheme.cocoa,
+                          elevation: 2,
+                          tooltip: 'Center on Auto Nagar Outlet',
+                          onPressed: () => _moveToLocation(outletLat, outletLng, zoom: 14.5),
+                          child: const Icon(Icons.storefront, size: 18),
+                        ),
+                        const SizedBox(width: 8),
+                        // Device Current GPS Location
+                        FloatingActionButton.small(
+                          heroTag: 'device_gps_btn',
+                          backgroundColor: AppTheme.mint,
+                          foregroundColor: Colors.white,
+                          elevation: 2,
+                          tooltip: 'Use My Current GPS Location',
+                          onPressed: _isLocating ? null : _getCurrentLocation,
+                          child: _isLocating
+                              ? const SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                )
+                              : const Icon(Icons.my_location, size: 18),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
@@ -509,7 +687,7 @@ class _InteractiveMapPickerState extends State<InteractiveMapPicker> {
                   backgroundColor: isSelected ? AppTheme.cream : Colors.grey[100],
                   padding: const EdgeInsets.symmetric(horizontal: 4),
                   visualDensity: VisualDensity.compact,
-                  onPressed: () => _updatePosition(lat, lng),
+                  onPressed: () => _moveToLocation(lat, lng),
                 );
               }).toList(),
             ),
@@ -598,92 +776,5 @@ class _InteractiveMapPickerState extends State<InteractiveMapPicker> {
         ],
       ),
     );
-  }
-}
-
-class _VijayawadaMapPainter extends CustomPainter {
-  final double outletX;
-  final double outletY;
-  final double radiusPixels;
-
-  _VijayawadaMapPainter({
-    required this.outletX,
-    required this.outletY,
-    required this.radiusPixels,
-  });
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    // 1. Background terrain (soft warm parchment)
-    final bgPaint = Paint()..color = const Color(0xFFF9F6F0);
-    canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), bgPaint);
-
-    // 2. Krishna River (light blue curve across south-west)
-    final riverPaint = Paint()
-      ..color = const Color(0xFFD6E9FA)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 24
-      ..strokeCap = StrokeCap.round;
-
-    final riverPath = Path()
-      ..moveTo(0, size.height * 0.85)
-      ..cubicTo(
-        size.width * 0.25, size.height * 0.95,
-        size.width * 0.6, size.height * 0.70,
-        size.width, size.height * 0.80,
-      );
-    canvas.drawPath(riverPath, riverPaint);
-
-    // 3. Grid road network (Bandar Road, MG Road, Ring Road)
-    final roadPaint = Paint()
-      ..color = const Color(0xFFE5DDD3)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 3;
-
-    // Bandar Road (diagonal NW to SE)
-    canvas.drawLine(
-      Offset(size.width * 0.1, size.height * 0.2),
-      Offset(size.width * 0.9, size.height * 0.75),
-      roadPaint,
-    );
-
-    // MG Road
-    canvas.drawLine(
-      Offset(size.width * 0.15, size.height * 0.4),
-      Offset(size.width * 0.85, size.height * 0.4),
-      roadPaint..strokeWidth = 2,
-    );
-
-    // Ring Road curve
-    final ringPaint = Paint()
-      ..color = const Color(0xFFEBE3D9)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 4;
-    canvas.drawArc(
-      Rect.fromCircle(center: Offset(size.width * 0.5, size.height * 0.5), radius: size.width * 0.42),
-      -pi / 3,
-      pi * 1.2,
-      false,
-      ringPaint,
-    );
-
-    // 4. 5.0 km Service Radius Circle
-    final radiusFillPaint = Paint()
-      ..color = const Color(0xFF72B7A1).withValues(alpha: 0.12)
-      ..style = PaintingStyle.fill;
-    canvas.drawCircle(Offset(outletX, outletY), radiusPixels, radiusFillPaint);
-
-    final radiusBorderPaint = Paint()
-      ..color = const Color(0xFFCE8822).withValues(alpha: 0.6)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.5;
-    canvas.drawCircle(Offset(outletX, outletY), radiusPixels, radiusBorderPaint);
-  }
-
-  @override
-  bool shouldRepaint(covariant _VijayawadaMapPainter oldDelegate) {
-    return oldDelegate.outletX != outletX ||
-        oldDelegate.outletY != outletY ||
-        oldDelegate.radiusPixels != radiusPixels;
   }
 }

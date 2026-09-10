@@ -5,6 +5,7 @@ import 'package:ds_milk_world_flutter/main.dart';
 import 'package:ds_milk_world_flutter/state/cart_state.dart';
 import 'package:ds_milk_world_flutter/services/mock_data.dart';
 import 'package:ds_milk_world_flutter/screens/order_history_screen.dart';
+import 'package:ds_milk_world_flutter/widgets/interactive_map_picker.dart';
 
 void main() {
   setUpAll(() {
@@ -100,6 +101,30 @@ void main() {
       await tester.tap(find.text('Got It'));
       await tester.pumpAndSettle();
       expect(find.text('DS Milk World Direct Guarantee'), findsNothing);
+    });
+
+    testWidgets('InteractiveMapPicker renders OpenStreetMap controls and Rapido rate card', (WidgetTester tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: SingleChildScrollView(
+              child: InteractiveMapPicker(
+                initialLat: 16.4950,
+                initialLng: 80.6650,
+                onLocationChanged: (_) {},
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Live OpenStreetMap & Rapido Rate'), findsOneWidget);
+      expect(find.textContaining('OpenStreetMap'), findsWidgets);
+      expect(find.byTooltip('Use My Current GPS Location'), findsOneWidget);
+      expect(find.byTooltip('Center on Auto Nagar Outlet'), findsOneWidget);
+      expect(find.text('Auto Nagar Gate (Outlet Location)'), findsOneWidget);
+      expect(find.text('Rapido Bike Parcel'), findsOneWidget);
     });
   });
 }
