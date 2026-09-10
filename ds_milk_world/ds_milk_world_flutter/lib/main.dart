@@ -9,6 +9,45 @@ late Client client;
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Production Error Handling
+  FlutterError.onError = (FlutterErrorDetails details) {
+    FlutterError.presentError(details);
+  };
+
+  ErrorWidget.builder = (FlutterErrorDetails errorDetails) {
+    return Material(
+      color: const Color(0xFFFFFDF8),
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.local_cafe_rounded, size: 52, color: Color(0xFF3A241B)),
+              const SizedBox(height: 16),
+              const Text(
+                'DS Milk World',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w900,
+                  color: Color(0xFF3A241B),
+                  fontFamily: 'Outfit',
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Something unexpected occurred. Please refresh the page to continue.',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 13, color: Color(0xFF7A6B63)),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  };
+
   const serverUrlFromEnv = String.fromEnvironment('SERVER_URL');
   final serverUrl = serverUrlFromEnv.isEmpty ? 'http://$localhost:8080/' : serverUrlFromEnv;
 

@@ -1,11 +1,11 @@
 {
-    "name": "ds_milk_world_flutter",
-    "short_name": "ds_milk_world_flutter",
+    "name": "DS Milk World — Direct Ordering Platform",
+    "short_name": "DS Milk World",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#FFFDF8",
+    "theme_color": "#3A241B",
+    "description": "Pure farm milk, thick shakes, royal faloodas, and fresh scoops directly from DS Milk World with rapid local doorstep delivery.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [
