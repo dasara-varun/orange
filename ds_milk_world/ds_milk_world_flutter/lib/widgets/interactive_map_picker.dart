@@ -430,10 +430,12 @@ class _InteractiveMapPickerState extends State<InteractiveMapPicker> {
                       },
                     ),
                     children: [
-                      // OpenStreetMap Standard Raster Tile Layer
+                      // Leaflet / OpenStreetMap CartoDB Voyager Retina Tile Layer
                       TileLayer(
-                        urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                        urlTemplate: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png',
+                        subdomains: const ['a', 'b', 'c', 'd'],
                         userAgentPackageName: 'com.example.ds_milk_world_flutter',
+                        maxZoom: 19,
                       ),
 
                       // 5.0 km Freshness Service Radius Circle
@@ -443,9 +445,17 @@ class _InteractiveMapPickerState extends State<InteractiveMapPicker> {
                             point: const LatLng(outletLat, outletLng),
                             radius: maxRadiusKm * 1000, // 5000 meters
                             useRadiusInMeter: true,
-                            color: const Color(0xFF72B7A1).withValues(alpha: 0.15),
-                            borderColor: const Color(0xFFCE8822).withValues(alpha: 0.8),
-                            borderStrokeWidth: 2,
+                            color: const Color(0xFF72B7A1).withValues(alpha: 0.14),
+                            borderColor: const Color(0xFFCE8822),
+                            borderStrokeWidth: 2.5,
+                          ),
+                          CircleMarker(
+                            point: const LatLng(outletLat, outletLng),
+                            radius: (maxRadiusKm * 1000) - 60,
+                            useRadiusInMeter: true,
+                            color: Colors.transparent,
+                            borderColor: const Color(0xFFE8A23A).withValues(alpha: 0.4),
+                            borderStrokeWidth: 1.0,
                           ),
                         ],
                       ),
@@ -552,7 +562,35 @@ class _InteractiveMapPickerState extends State<InteractiveMapPicker> {
                     ),
                   ),
 
-                  // Map drag instruction & OpenStreetMap attribution
+                  // Top left: 5.0 km Freshness Perimeter badge
+                  Positioned(
+                    left: 8,
+                    top: 8,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.92),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: AppTheme.border),
+                        boxShadow: const [
+                          BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 1)),
+                        ],
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: const [
+                          Icon(Icons.verified, size: 12, color: AppTheme.mint),
+                          SizedBox(width: 4),
+                          Text(
+                            '5.0 km Freshness Radius',
+                            style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: AppTheme.cocoa),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  // Map drag instruction & Leaflet / OpenStreetMap attribution
                   Positioned(
                     left: 8,
                     bottom: 8,
@@ -563,7 +601,7 @@ class _InteractiveMapPickerState extends State<InteractiveMapPicker> {
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: const Text(
-                        'Map: © OpenStreetMap • Drag / Tap pin',
+                        'Leaflet Maps • © OpenStreetMap, © CARTO • Drag / Tap pin',
                         style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w600),
                       ),
                     ),
