@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'theme/app_theme.dart';
 import 'screens/storefront_screen.dart';
 
@@ -12,6 +12,9 @@ class CustomerApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: AppTheme.themeData,
       home: const StorefrontScreen(),
+      routes: {
+        '/store': (_) => const StorefrontScreen(),
+      },
     );
   }
 }

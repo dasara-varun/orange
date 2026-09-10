@@ -2,8 +2,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:serverpod_flutter/serverpod_flutter.dart';
 import 'package:ds_milk_world_client/ds_milk_world_client.dart';
-import 'theme/app_theme.dart';
-import 'screens/storefront_screen.dart';
 import 'customer_app.dart';
 import 'outlet_app.dart';
 
@@ -33,15 +31,6 @@ class DsMilkWorldApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'DS Milk World — Direct Ordering',
-      debugShowCheckedModeBanner: false,
-      theme: AppTheme.themeData,
-      home: const StorefrontScreen(),
-      routes: {
-        '/store': (_) => const StorefrontScreen(),
-        '/outlet': (_) => const OutletApp(),
-      },
-    );
+    return const CustomerApp();
   }
 }

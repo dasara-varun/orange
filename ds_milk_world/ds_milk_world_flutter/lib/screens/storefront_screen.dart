@@ -6,7 +6,6 @@ import '../widgets/outlet_header.dart';
 import '../widgets/category_rail.dart';
 import '../widgets/product_card.dart';
 import '../widgets/cart_drawer.dart';
-import 'staff_console_screen.dart';
 import 'outlet_login_screen.dart';
 import 'order_history_screen.dart';
 
@@ -56,6 +55,16 @@ class _StorefrontScreenState extends State<StorefrontScreen> {
     }).toList();
   }
 
+  List<List<Product>> _getGroupedProducts() {
+    final filtered = _getFilteredProducts();
+    final Map<String, List<Product>> groups = {};
+    for (final p in filtered) {
+      final key = '${p.categoryName}__${p.name}';
+      groups.putIfAbsent(key, () => []).add(p);
+    }
+    return groups.values.toList();
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_isStaffMode) {
@@ -64,71 +73,62 @@ class _StorefrontScreenState extends State<StorefrontScreen> {
       );
     }
 
-    final filteredProducts = _getFilteredProducts();
-    final screenWidth = MediaQuery.of(context).size.width;
-    final isDesktop = screenWidth >= 900;
+    final groupedProducts = _getGroupedProducts();
 
     return Scaffold(
       backgroundColor: AppTheme.milk,
       body: SafeArea(
-        child: Column(
-          children: [
-            // Outlet Header
-            OutletHeader(
-              onSearchChanged: (val) => setState(() => _searchQuery = val),
-              onToggleStaffMode: () => setState(() => _isStaffMode = !_isStaffMode),
-              onOpenHistory: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const OrderHistoryScreen()),
-              ),
-              isStaffMode: _isStaffMode,
-            ),
-            // Category Rail
-            if (_catalog != null)
-              CategoryRail(
-                categories: _catalog!.categories,
-                selectedCategory: _selectedCategory,
-                onSelectCategory: (cat) => setState(() => _selectedCategory = cat),
-              ),
-            // Product List / Grid
-            Expanded(
-              child: _isLoading
-                  ? const Center(
-                      child: CircularProgressIndicator(color: AppTheme.saffron),
-                    )
-                  : filteredProducts.isEmpty
-                      ? Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Icon(Icons.search_off, size: 48, color: AppTheme.muted),
-                              const SizedBox(height: 12),
-                              Text(
-                                'No matching items found for "$_searchQuery"',
-                                style: const TextStyle(color: AppTheme.muted, fontSize: 14),
-                              ),
-                            ],
-                          ),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 860),
+            child: Column(
+              children: [
+                // Outlet Header
+                OutletHeader(
+                  onSearchChanged: (val) => setState(() => _searchQuery = val),
+                  onToggleStaffMode: () => setState(() => _isStaffMode = !_isStaffMode),
+                  onOpenHistory: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const OrderHistoryScreen()),
+                  ),
+                  isStaffMode: _isStaffMode,
+                ),
+                // Category Rail
+                if (_catalog != null)
+                  CategoryRail(
+                    categories: _catalog!.categories,
+                    selectedCategory: _selectedCategory,
+                    onSelectCategory: (cat) => setState(() => _selectedCategory = cat),
+                  ),
+                // Product List / Grid
+                Expanded(
+                  child: _isLoading
+                      ? const Center(
+                          child: CircularProgressIndicator(color: AppTheme.saffron),
                         )
-                      : isDesktop
-                          ? GridView.builder(
-                              padding: const EdgeInsets.fromLTRB(16, 12, 16, 90),
-                              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: 2,
-                                childAspectRatio: 2.6,
-                                crossAxisSpacing: 16,
-                                mainAxisSpacing: 8,
+                      : groupedProducts.isEmpty
+                          ? Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const Icon(Icons.search_off, size: 48, color: AppTheme.muted),
+                                  const SizedBox(height: 12),
+                                  Text(
+                                    'No matching items found for "$_searchQuery"',
+                                    style: const TextStyle(color: AppTheme.muted, fontSize: 14),
+                                  ),
+                                ],
                               ),
-                              itemCount: filteredProducts.length,
-                              itemBuilder: (context, idx) => ProductCard(product: filteredProducts[idx]),
                             )
                           : ListView.builder(
                               padding: const EdgeInsets.only(top: 8, bottom: 90),
-                              itemCount: filteredProducts.length,
-                              itemBuilder: (context, idx) => ProductCard(product: filteredProducts[idx]),
+                              itemCount: groupedProducts.length,
+                              itemBuilder: (context, idx) => ProductCard(variants: groupedProducts[idx]),
                             ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
       bottomNavigationBar: const FloatingCartBar(),
