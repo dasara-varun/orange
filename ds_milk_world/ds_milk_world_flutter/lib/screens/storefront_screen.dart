@@ -7,6 +7,7 @@ import '../widgets/category_rail.dart';
 import '../widgets/product_card.dart';
 import '../widgets/cart_drawer.dart';
 import 'staff_console_screen.dart';
+import 'outlet_login_screen.dart';
 import 'order_history_screen.dart';
 
 class StorefrontScreen extends StatefulWidget {
@@ -58,8 +59,8 @@ class _StorefrontScreenState extends State<StorefrontScreen> {
   @override
   Widget build(BuildContext context) {
     if (_isStaffMode) {
-      return StaffConsoleScreen(
-        onBackToStorefront: () => setState(() => _isStaffMode = false),
+      return OutletLoginScreen(
+        onBackToCustomer: () => setState(() => _isStaffMode = false),
       );
     }
 
