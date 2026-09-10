@@ -34,8 +34,112 @@
 
   <title>DS Milk World — Pure Milk, Shakes & Falooda (Kanuru)</title>
   <link rel="manifest" href="manifest.json">
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #3A241B;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      user-select: none;
+      -webkit-user-select: none;
+      overflow: hidden;
+    }
+    #dsmw-splash {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(circle at center, #4D3227 0%, #3A241B 100%);
+      z-index: 99999;
+      transition: opacity 0.4s ease-out;
+    }
+    .dsmw-logo-box {
+      position: relative;
+      width: 88px;
+      height: 88px;
+      border-radius: 22px;
+      background: #FFFFFF;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.35), 0 0 20px rgba(232, 146, 52, 0.25);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      animation: dsmw-pulse 2.2s infinite ease-in-out;
+    }
+    .dsmw-logo-box img {
+      width: 72px;
+      height: 72px;
+      border-radius: 16px;
+      object-fit: cover;
+    }
+    .dsmw-title {
+      margin-top: 20px;
+      color: #FFF9F2;
+      font-size: 22px;
+      font-weight: 800;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+    }
+    .dsmw-subtitle {
+      margin-top: 6px;
+      color: #E89234;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.8px;
+    }
+    .dsmw-progress-container {
+      margin-top: 28px;
+      width: 140px;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 2px;
+      overflow: hidden;
+      position: relative;
+    }
+    .dsmw-progress-bar {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      background: linear-gradient(90deg, #E89234, #FFB366);
+      border-radius: 2px;
+      animation: dsmw-bar 1.5s infinite ease-in-out;
+    }
+    @keyframes dsmw-pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.04); box-shadow: 0 12px 36px rgba(0,0,0,0.4), 0 0 26px rgba(232, 146, 52, 0.4); }
+    }
+    @keyframes dsmw-bar {
+      0% { left: -40%; width: 40%; }
+      50% { left: 30%; width: 60%; }
+      100% { left: 100%; width: 30%; }
+    }
+  </style>
 </head>
 <body>
+  <div id="dsmw-splash">
+    <div class="dsmw-logo-box">
+      <img src="icons/Icon-192.png?v=2" alt="DS Milk World">
+    </div>
+    <div class="dsmw-title">DS Milk World</div>
+    <div class="dsmw-subtitle">Pure Dairy & Kitchen • Kanuru</div>
+    <div class="dsmw-progress-container">
+      <div class="dsmw-progress-bar"></div>
+    </div>
+  </div>
+  <script>
+    function removeSplash() {
+      var s = document.getElementById('dsmw-splash');
+      if (s) {
+        s.style.opacity = '0';
+        s.style.pointerEvents = 'none';
+        setTimeout(function() { if (s && s.parentNode) s.parentNode.removeChild(s); }, 450);
+      }
+    }
+    window.addEventListener('flutter-first-frame', removeSplash);
+    // Fallback safety timeout in case event is missed
+    setTimeout(removeSplash, 4000);
+  </script>
   <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>

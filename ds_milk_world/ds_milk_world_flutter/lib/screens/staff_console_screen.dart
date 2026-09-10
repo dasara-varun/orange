@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:ds_milk_world_client/ds_milk_world_client.dart';
 import '../theme/app_theme.dart';
 import '../services/api_service.dart';
+import '../services/mock_data.dart';
 
 class StaffConsoleScreen extends StatefulWidget {
   final VoidCallback onBackToStorefront;
@@ -15,9 +16,9 @@ class StaffConsoleScreen extends StatefulWidget {
 
 class _StaffConsoleScreenState extends State<StaffConsoleScreen> with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  List<OrderRecord> _orders = [];
-  StoreCatalog? _catalog;
-  bool _isLoading = true;
+  List<OrderRecord> _orders = ApiService.instance.getInitialOrders();
+  StoreCatalog? _catalog = MockData.getCatalog();
+  bool _isLoading = false;
   Timer? _pollingTimer;
   String _catalogSearch = '';
   String _orderSearchQuery = '';
@@ -26,7 +27,7 @@ class _StaffConsoleScreenState extends State<StaffConsoleScreen> with SingleTick
   void initState() {
     super.initState();
     _tabController = TabController(length: 7, vsync: this);
-    _loadData();
+    _loadData(silent: true);
     _pollingTimer = Timer.periodic(const Duration(seconds: 4), (_) => _loadData(silent: true));
   }
 
@@ -37,15 +38,17 @@ class _StaffConsoleScreenState extends State<StaffConsoleScreen> with SingleTick
     super.dispose();
   }
 
-  Future<void> _loadData({bool silent = false}) async {
-    if (!silent) setState(() => _isLoading = true);
+  Future<void> _loadData({bool silent = true}) async {
+    if (!silent && _orders.isEmpty) setState(() => _isLoading = true);
     try {
-      final orders = await ApiService.instance.listAllOrders();
-      final catalog = await ApiService.instance.getCatalog();
+      final results = await Future.wait([
+        ApiService.instance.listAllOrders(),
+        ApiService.instance.getCatalog(),
+      ]);
       if (mounted) {
         setState(() {
-          _orders = orders;
-          _catalog = catalog;
+          _orders = results[0] as List<OrderRecord>;
+          _catalog = results[1] as StoreCatalog;
           _isLoading = false;
         });
       }

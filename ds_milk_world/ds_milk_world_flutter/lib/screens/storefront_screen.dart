@@ -6,6 +6,7 @@ import '../widgets/outlet_header.dart';
 import '../widgets/category_rail.dart';
 import '../widgets/product_card.dart';
 import '../widgets/cart_drawer.dart';
+import '../services/mock_data.dart';
 import 'outlet_login_screen.dart';
 import 'order_history_screen.dart';
 
@@ -17,8 +18,7 @@ class StorefrontScreen extends StatefulWidget {
 }
 
 class _StorefrontScreenState extends State<StorefrontScreen> {
-  StoreCatalog? _catalog;
-  bool _isLoading = true;
+  StoreCatalog? _catalog = MockData.getCatalog();
   String _selectedCategory = 'all';
   String _searchQuery = '';
   bool _isStaffMode = false;
@@ -30,17 +30,15 @@ class _StorefrontScreenState extends State<StorefrontScreen> {
   }
 
   Future<void> _fetchCatalog() async {
-    setState(() => _isLoading = true);
     try {
       final cat = await ApiService.instance.getCatalog();
       if (mounted) {
         setState(() {
           _catalog = cat;
-          _isLoading = false;
         });
       }
     } catch (_) {
-      if (mounted) setState(() => _isLoading = false);
+      // Keep existing catalog
     }
   }
 
@@ -113,7 +111,7 @@ class _StorefrontScreenState extends State<StorefrontScreen> {
                   ),
                 // Product List / Grid
                 Expanded(
-                  child: _isLoading
+                  child: _catalog == null
                       ? const Center(
                           child: CircularProgressIndicator(color: AppTheme.saffron),
                         )
