@@ -6,10 +6,10 @@ import 'package:ds_milk_world_server/src/services/order_service.dart';
 
 void main() {
   group('CatalogService Tests', () {
-    test('Catalog contains 79 items and 8 categories', () {
+    test('Catalog contains 147 items and 9 categories', () {
       final catalog = CatalogService.getCatalog();
-      expect(catalog.products.length, equals(79));
-      expect(catalog.categories.length, equals(8));
+      expect(catalog.products.length, equals(147));
+      expect(catalog.categories.length, equals(9));
       expect(catalog.outlet.name, equals('DS Milk World'));
     });
 
@@ -22,11 +22,11 @@ void main() {
       }
     });
 
-    test('Oreo Falooda has SKU DSMW-001 and price 16000 paise (Rs 160)', () {
-      final p = CatalogService.getProductBySku('DSMW-001');
+    test('Oreo Falooda has SKU DSMW-FAL-05 and price 9000 paise (Rs 90)', () {
+      final p = CatalogService.getProductBySku('DSMW-FAL-05');
       expect(p, isNotNull);
       expect(p!.name, equals('Oreo Falooda'));
-      expect(p.pricePaise, equals(16000));
+      expect(p.pricePaise, equals(9000));
     });
   });
 
@@ -62,7 +62,7 @@ void main() {
 
       final items = [
         OrderItem(
-          productSku: 'DSMW-001', // Oreo Falooda, Rs 160
+          productSku: 'DSMW-FAL-05', // Oreo Falooda, Rs 90
           nameSnapshot: 'Client Name Tamper',
           unitPricePaise: 99999, // Client attempt to tamper
           quantity: 2,
@@ -70,7 +70,7 @@ void main() {
           subtotalPaise: 99999,
         ),
         OrderItem(
-          productSku: 'DSMW-002', // Rose Falooda, Rs 130
+          productSku: 'DSMW-FAL-01', // Rose Falooda, Rs 90
           nameSnapshot: 'Client Name Tamper',
           unitPricePaise: 1, // Client attempt to tamper
           quantity: 1,
@@ -90,8 +90,8 @@ void main() {
       );
 
       expect(order.orderNumber.startsWith('DSMW-'), isTrue);
-      // Subtotal should be (160 * 2) + 130 = Rs 450 = 45000 paise
-      expect(order.subtotalPaise, equals(45000));
+      // Subtotal should be (90 * 2) + 90 = Rs 270 = 27000 paise
+      expect(order.subtotalPaise, equals(27000));
       // Delivery fee should be calculated based on distance
       expect(order.deliveryFeePaise, equals(GeoService.calculateDeliveryFeePaise(order.distanceKm)));
       expect(order.totalPaise, equals(order.subtotalPaise + order.deliveryFeePaise));
@@ -99,8 +99,8 @@ void main() {
 
       // Check item snapshots were populated from catalog
       expect(order.items[0].nameSnapshot, equals('Oreo Falooda'));
-      expect(order.items[0].unitPricePaise, equals(16000));
-      expect(order.items[0].subtotalPaise, equals(32000));
+      expect(order.items[0].unitPricePaise, equals(9000));
+      expect(order.items[0].subtotalPaise, equals(18000));
     });
 
     test('Rejects orders outside 5 km service radius', () {
@@ -116,11 +116,11 @@ void main() {
           longitude: farLng,
           requestedItems: [
             OrderItem(
-              productSku: 'DSMW-001',
+              productSku: 'DSMW-FAL-05',
               nameSnapshot: 'Oreo Falooda',
-              unitPricePaise: 16000,
+              unitPricePaise: 9000,
               quantity: 1,
-              subtotalPaise: 16000,
+              subtotalPaise: 9000,
             ),
           ],
         ),
@@ -138,11 +138,11 @@ void main() {
         longitude: 80.6680,
         requestedItems: [
           OrderItem(
-            productSku: 'DSMW-003', // Badam Falooda
+            productSku: 'DSMW-FAL-07', // Badam Falooda, Rs 120
             nameSnapshot: 'Badam Falooda',
-            unitPricePaise: 15000,
+            unitPricePaise: 12000,
             quantity: 1,
-            subtotalPaise: 15000,
+            subtotalPaise: 12000,
           ),
         ],
       );
@@ -235,11 +235,11 @@ void main() {
         longitude: 80.6660,
         requestedItems: [
           OrderItem(
-            productSku: 'DSMW-005',
+            productSku: 'DSMW-FAL-09',
             nameSnapshot: 'Kulfi Falooda',
-            unitPricePaise: 16000,
+            unitPricePaise: 12000,
             quantity: 1,
-            subtotalPaise: 16000,
+            subtotalPaise: 12000,
           ),
         ],
       );
@@ -282,11 +282,11 @@ void main() {
         longitude: 80.6655,
         requestedItems: [
           OrderItem(
-            productSku: 'DSMW-002',
+            productSku: 'DSMW-FAL-01',
             nameSnapshot: 'Rose Falooda',
-            unitPricePaise: 13000,
+            unitPricePaise: 9000,
             quantity: 1,
-            subtotalPaise: 13000,
+            subtotalPaise: 9000,
           ),
         ],
       );
@@ -325,11 +325,11 @@ void main() {
         longitude: 80.6655,
         requestedItems: [
           OrderItem(
-            productSku: 'DSMW-002',
+            productSku: 'DSMW-FAL-01',
             nameSnapshot: 'Rose Falooda',
-            unitPricePaise: 13000,
+            unitPricePaise: 9000,
             quantity: 1,
-            subtotalPaise: 13000,
+            subtotalPaise: 9000,
           ),
         ],
       );
@@ -362,11 +362,11 @@ void main() {
         longitude: 80.6660,
         requestedItems: [
           OrderItem(
-            productSku: 'DSMW-004',
-            nameSnapshot: 'Fruit Falooda',
-            unitPricePaise: 14000,
+            productSku: 'DSMW-FAL-08',
+            nameSnapshot: 'Fruit Punch Falooda',
+            unitPricePaise: 12000,
             quantity: 1,
-            subtotalPaise: 14000,
+            subtotalPaise: 12000,
           ),
         ],
       );

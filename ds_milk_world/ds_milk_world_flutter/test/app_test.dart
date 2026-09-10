@@ -24,25 +24,25 @@ void main() {
     });
 
     test('Adding products updates quantity and subtotal correctly', () {
-      final oreoFalooda = MockData.getProductBySku('DSMW-001')!; // Rs 160 = 16000 paise
-      final roseFalooda = MockData.getProductBySku('DSMW-002')!;  // Rs 130 = 13000 paise
+      final oreoFalooda = MockData.getProductBySku('DSMW-FAL-05')!; // Rs 90 = 9000 paise
+      final roseFalooda = MockData.getProductBySku('DSMW-FAL-01')!;  // Rs 90 = 9000 paise
 
       CartState.instance.addProduct(oreoFalooda);
       expect(CartState.instance.totalItems, equals(1));
-      expect(CartState.instance.getQuantity('DSMW-001'), equals(1));
-      expect(CartState.instance.subtotalPaise, equals(16000));
+      expect(CartState.instance.getQuantity('DSMW-FAL-05'), equals(1));
+      expect(CartState.instance.subtotalPaise, equals(9000));
 
-      CartState.instance.incrementProduct('DSMW-001');
+      CartState.instance.incrementProduct('DSMW-FAL-05');
       expect(CartState.instance.totalItems, equals(2));
-      expect(CartState.instance.getQuantity('DSMW-001'), equals(2));
-      expect(CartState.instance.subtotalPaise, equals(32000));
+      expect(CartState.instance.getQuantity('DSMW-FAL-05'), equals(2));
+      expect(CartState.instance.subtotalPaise, equals(18000));
 
       CartState.instance.addProduct(roseFalooda);
       expect(CartState.instance.totalItems, equals(3));
-      expect(CartState.instance.subtotalPaise, equals(45000));
+      expect(CartState.instance.subtotalPaise, equals(27000));
 
-      CartState.instance.removeProduct('DSMW-001');
-      expect(CartState.instance.getQuantity('DSMW-001'), equals(1));
+      CartState.instance.removeProduct('DSMW-FAL-05');
+      expect(CartState.instance.getQuantity('DSMW-FAL-05'), equals(1));
       expect(CartState.instance.totalItems, equals(2));
 
       CartState.instance.clearCart();
@@ -59,12 +59,12 @@ void main() {
       expect(find.text('DS Milk World'), findsOneWidget);
       expect(find.textContaining('Auto Nagar Counter'), findsWidgets);
       expect(find.text('All Items'), findsOneWidget);
+      expect(find.text('Butter Milk'), findsOneWidget);
       expect(find.text('Falooda'), findsOneWidget);
-      expect(find.text('Thick Shakes'), findsOneWidget);
 
       // Product item
-      expect(find.text('Oreo Falooda'), findsOneWidget);
-      expect(find.text('₹160'), findsWidgets);
+      expect(find.text('Masala Butter Milk'), findsWidgets);
+      expect(find.text('₹20'), findsWidgets);
 
       // Tap ADD on Oreo Falooda
       final addButtons = find.text('ADD');

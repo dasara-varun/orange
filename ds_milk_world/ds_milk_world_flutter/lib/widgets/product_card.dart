@@ -145,11 +145,7 @@ class ProductCard extends StatelessWidget {
                         height: 36,
                         child: ElevatedButton(
                           onPressed: () {
-                            if (product.customisable) {
-                              CustomizationSheet.show(context, product);
-                            } else {
-                              CartState.instance.addProduct(product);
-                            }
+                            CartState.instance.addProduct(product);
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppTheme.cream,
