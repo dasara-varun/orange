@@ -63,7 +63,8 @@ class OrderService {
       );
     }
 
-    final deliveryFeePaise = GeoService.calculateDeliveryFeePaise(distanceKm);
+    final roundedDistanceKm = double.parse(distanceKm.toStringAsFixed(2));
+    final deliveryFeePaise = GeoService.calculateDeliveryFeePaise(roundedDistanceKm);
 
     // 2. Server-side price calculation (strictly ignore any client pricing)
     int subtotalPaise = 0;

@@ -326,7 +326,7 @@ class _StaffConsoleScreenState extends State<StaffConsoleScreen> with SingleTick
               ),
               const Center(
                 child: Text(
-                  'AUTO NAGAR OUTLET - KITCHEN TICKET',
+                  'KANURU OUTLET - KITCHEN TICKET',
                   style: TextStyle(fontFamily: 'monospace', fontWeight: FontWeight.w700, fontSize: 11),
                 ),
               ),
@@ -600,7 +600,7 @@ class _StaffConsoleScreenState extends State<StaffConsoleScreen> with SingleTick
                 borderRadius: BorderRadius.circular(6),
               ),
               child: const Text(
-                'Auto Nagar Counter',
+                'Kanuru Counter',
                 style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: AppTheme.cocoa),
               ),
             ),
@@ -915,7 +915,7 @@ class _StaffConsoleScreenState extends State<StaffConsoleScreen> with SingleTick
           ),
           const SizedBox(height: 6),
           const Text(
-            'Live metrics from Auto Nagar Counter pilot:',
+            'Live metrics from Kanuru Counter pilot:',
             style: TextStyle(fontSize: 12, color: AppTheme.muted),
           ),
           const SizedBox(height: 16),

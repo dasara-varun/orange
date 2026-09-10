@@ -48,9 +48,9 @@ class MapLocation {
 }
 
 class _InteractiveMapPickerState extends State<InteractiveMapPicker> {
-  // Outlet coordinates (Auto Nagar Counter)
-  static const double outletLat = 16.4950;
-  static const double outletLng = 80.6650;
+  // Outlet coordinates (Kanuru Counter)
+  static const double outletLat = 16.4850;
+  static const double outletLng = 80.6900;
   static const double maxRadiusKm = 5.0;
 
   // Vijayawada geographic bounds for fallback clamping
@@ -72,13 +72,14 @@ class _InteractiveMapPickerState extends State<InteractiveMapPicker> {
   bool _isLoadingQuote = false;
   Timer? _debounceTimer;
 
-  // Key Vijayawada landmarks for rapid reference
+  // Key Vijayawada landmarks for rapid reference around Kanuru
   final List<Map<String, dynamic>> _landmarks = [
-    {'name': 'Auto Nagar Gate', 'lat': 16.4950, 'lng': 80.6650, 'sub': 'Outlet Location'},
-    {'name': 'Patamata', 'lat': 16.4980, 'lng': 80.6500, 'sub': '2.1 km'},
-    {'name': 'Benz Circle', 'lat': 16.5000, 'lng': 80.6400, 'sub': '3.2 km'},
-    {'name': 'Kanuru', 'lat': 16.4850, 'lng': 80.6900, 'sub': '3.1 km'},
-    {'name': 'Governorpet', 'lat': 16.5100, 'lng': 80.6250, 'sub': '4.6 km'},
+    {'name': 'Kanuru Center', 'lat': 16.4850, 'lng': 80.6900, 'sub': 'Outlet Location'},
+    {'name': 'Tadigadapa', 'lat': 16.4800, 'lng': 80.6800, 'sub': '1.2 km'},
+    {'name': 'Poranki', 'lat': 16.4780, 'lng': 80.7050, 'sub': '1.8 km'},
+    {'name': 'Auto Nagar Gate', 'lat': 16.4950, 'lng': 80.6650, 'sub': '2.9 km'},
+    {'name': 'Patamata', 'lat': 16.4980, 'lng': 80.6500, 'sub': '4.2 km'},
+    {'name': 'Benz Circle', 'lat': 16.5000, 'lng': 80.6400, 'sub': '4.9 km'},
   ];
 
   @override
@@ -459,7 +460,7 @@ class _InteractiveMapPickerState extends State<InteractiveMapPicker> {
                         ],
                       ),
 
-                      // Delivery Route Polyline connecting Auto Nagar Outlet to Delivery Pin
+                      // Delivery Route Polyline connecting Kanuru Outlet to Delivery Pin
                       PolylineLayer(
                         polylines: [
                           Polyline(
@@ -477,7 +478,7 @@ class _InteractiveMapPickerState extends State<InteractiveMapPicker> {
                       // Markers (Outlet and Delivery Location Pin)
                       MarkerLayer(
                         markers: [
-                          // Outlet Marker (DS Milk World Auto Nagar)
+                          // Outlet Marker (DS Milk World Kanuru)
                           Marker(
                             point: const LatLng(outletLat, outletLng),
                             width: 100,
@@ -663,13 +664,13 @@ class _InteractiveMapPickerState extends State<InteractiveMapPicker> {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        // Center on Auto Nagar Outlet
+                        // Center on Kanuru Outlet
                         FloatingActionButton.small(
                           heroTag: 'center_outlet_btn',
                           backgroundColor: Colors.white,
                           foregroundColor: AppTheme.cocoa,
                           elevation: 2,
-                          tooltip: 'Center on Auto Nagar Outlet',
+                          tooltip: 'Center on Kanuru Outlet',
                           onPressed: () => _moveToLocation(outletLat, outletLng, zoom: 14.5),
                           child: const Icon(Icons.storefront, size: 18),
                         ),
@@ -802,7 +803,7 @@ class _InteractiveMapPickerState extends State<InteractiveMapPicker> {
                       Text(
                         isServiceable
                             ? '${_liveQuote?.roadDistanceKm ?? dist.toStringAsFixed(1)} km road (~${_liveQuote?.durationMinutes ?? 10}m ETA) • Base ₹30 + Dist ₹${((_liveQuote?.distanceFarePaise ?? 0) / 100).ceil()} + Plat ₹3'
-                            : 'Exceeds 5.0 km freshness radius limit from Auto Nagar',
+                            : 'Exceeds 5.0 km freshness radius limit from Kanuru',
                         style: TextStyle(fontSize: 11, color: isServiceable ? AppTheme.muted : AppTheme.error),
                       ),
                     ],

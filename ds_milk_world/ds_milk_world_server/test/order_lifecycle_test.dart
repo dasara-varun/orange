@@ -62,7 +62,7 @@ void main() {
 
   group('Order Lifecycle & Invariants Tests', () {
     test('Calculates order total strictly on server and validates radius', () {
-      // Coordinate near Auto Nagar, ~1.5 km away
+      // Coordinate near Kanuru, ~3.0 km away
       const targetLat = 16.5050;
       const targetLng = 80.6700;
 
@@ -88,7 +88,7 @@ void main() {
       final order = OrderService.createOrder(
         customerPhone: '+91 9876543210',
         customerName: 'Ravi Teja',
-        deliveryAddress: 'Flat 402, Lotus Towers, Auto Nagar, Vijayawada',
+        deliveryAddress: 'Flat 402, Lotus Towers, Kanuru, Vijayawada',
         landmark: 'Opposite Water Tank',
         latitude: targetLat,
         longitude: targetLng,

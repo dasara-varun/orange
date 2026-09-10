@@ -41,13 +41,31 @@ class AddressSearchResult {
 }
 
 class RapidoLiveService {
-  // DS Milk World Counter - Auto Nagar Gate, Bandar Road, Vijayawada
-  static const double outletLat = 16.4950;
-  static const double outletLng = 80.6650;
+  // DS Milk World Counter - Kanuru Center, Bandar Road, Vijayawada
+  static const double outletLat = 16.4850;
+  static const double outletLng = 80.6900;
   static const double maxServiceRadiusKm = 5.0;
 
   // Curated prominent localities in Vijayawada for instant sub-second lookup
   static final List<AddressSearchResult> _vijayawadaLocalities = [
+    AddressSearchResult(
+      title: 'Kanuru Center',
+      fullAddress: 'Bandar Road, Near Kanuru Junction, Vijayawada, AP 520007',
+      latitude: 16.4850,
+      longitude: 80.6900,
+    ),
+    AddressSearchResult(
+      title: 'Poranki',
+      fullAddress: 'Poranki Main Road, Bandar Road, Vijayawada, AP 521137',
+      latitude: 16.4780,
+      longitude: 80.7050,
+    ),
+    AddressSearchResult(
+      title: 'Tadigadapa',
+      fullAddress: 'Tadigadapa Donka Road, Bandar Road, Vijayawada, AP 521137',
+      latitude: 16.4800,
+      longitude: 80.6800,
+    ),
     AddressSearchResult(
       title: 'Auto Nagar Gate',
       fullAddress: 'Auto Nagar Main Road, Bandar Road, Vijayawada, AP 520007',

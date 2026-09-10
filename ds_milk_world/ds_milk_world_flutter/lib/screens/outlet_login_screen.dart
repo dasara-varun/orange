@@ -118,7 +118,7 @@ class _OutletLoginScreenState extends State<OutletLoginScreen> {
                   ),
                   const SizedBox(height: 16),
                   const Text(
-                    'Auto Nagar Counter Console',
+                    'Kanuru Counter Console',
                     style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: AppTheme.cocoa),
                   ),
                   const SizedBox(height: 6),

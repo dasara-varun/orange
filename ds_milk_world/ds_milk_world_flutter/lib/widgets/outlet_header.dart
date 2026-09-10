@@ -100,7 +100,7 @@ class _OutletHeaderState extends State<OutletHeader> {
                               const SizedBox(width: 5),
                               const Flexible(
                                 child: Text(
-                                  'Auto Nagar Counter',
+                                  'Kanuru Counter',
                                   style: TextStyle(
                                     color: AppTheme.cocoa,
                                     fontSize: 11,
@@ -232,7 +232,7 @@ class _OutletHeaderState extends State<OutletHeader> {
                         ),
                         SizedBox(height: 2),
                         Text(
-                          'Handcrafted Faloodas • 100% Pure Milk • Auto Nagar',
+                          'Handcrafted Faloodas • 100% Pure Milk • Kanuru',
                           style: TextStyle(
                             color: Color(0xFFFFF1D6),
                             fontSize: 10,
@@ -338,7 +338,7 @@ class _OutletHeaderState extends State<OutletHeader> {
               _GuaranteeTile(
                 icon: Icons.location_on,
                 title: '5.0 km Strict Freshness Perimeter',
-                description: 'Deliveries limited strictly to 5.0 km around our Auto Nagar counter (Vijayawada) so cold dairy treats and thickshakes arrive in peak condition.',
+                description: 'Deliveries limited strictly to 5.0 km around our Kanuru counter (Vijayawada) so cold dairy treats and thickshakes arrive in peak condition.',
               ),
               SizedBox(height: 12),
               _GuaranteeTile(

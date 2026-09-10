@@ -88,7 +88,7 @@ class ApiService {
     try {
       return await client.quote.getDeliveryQuote(lat, lng).timeout(const Duration(milliseconds: 1500));
     } catch (_) {
-      final distance = _haversineDistance(16.4950, 80.6650, lat, lng);
+      final distance = _haversineDistance(16.4850, 80.6900, lat, lng);
       final serviceable = distance <= 5.0;
       final fee = serviceable ? _calculateFeePaise(distance) : 0;
       return DeliveryQuote(
@@ -96,7 +96,7 @@ class ApiService {
         distanceKm: double.parse(distance.toStringAsFixed(2)),
         feePaise: fee,
         message: serviceable
-            ? 'Serviceable (${distance.toStringAsFixed(1)} km from Auto Nagar)'
+            ? 'Serviceable (${distance.toStringAsFixed(1)} km from Kanuru)'
             : 'Delivery location is ${distance.toStringAsFixed(1)} km away. Maximum service radius is 5.0 km.',
       );
     }
@@ -123,7 +123,7 @@ class ApiService {
       ).timeout(const Duration(milliseconds: 2000));
     } catch (_) {
       // Local fallback logic
-      final dist = _haversineDistance(16.4950, 80.6650, latitude, longitude);
+      final dist = _haversineDistance(16.4850, 80.6900, latitude, longitude);
       if (dist > 5.0) {
         throw Exception('Location exceeds 5.0 km delivery radius.');
       }

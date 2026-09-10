@@ -57,7 +57,7 @@ void main() {
 
       // Outlet header
       expect(find.text('DS Milk World'), findsOneWidget);
-      expect(find.textContaining('Auto Nagar Counter'), findsWidgets);
+      expect(find.textContaining('Kanuru Counter'), findsWidgets);
       expect(find.text('All Items'), findsOneWidget);
       expect(find.text('Butter Milk'), findsOneWidget);
       expect(find.text('Falooda'), findsOneWidget);
@@ -109,8 +109,8 @@ void main() {
           home: Scaffold(
             body: SingleChildScrollView(
               child: InteractiveMapPicker(
-                initialLat: 16.4950,
-                initialLng: 80.6650,
+                initialLat: 16.4850,
+                initialLng: 80.6900,
                 onLocationChanged: (_) {},
               ),
             ),
@@ -122,8 +122,8 @@ void main() {
       expect(find.text('Live OpenStreetMap & Rapido Rate'), findsOneWidget);
       expect(find.textContaining('OpenStreetMap'), findsWidgets);
       expect(find.byTooltip('Use My Current GPS Location'), findsOneWidget);
-      expect(find.byTooltip('Center on Auto Nagar Outlet'), findsOneWidget);
-      expect(find.text('Auto Nagar Gate (Outlet Location)'), findsOneWidget);
+      expect(find.byTooltip('Center on Kanuru Outlet'), findsOneWidget);
+      expect(find.text('Kanuru Center (Outlet Location)'), findsOneWidget);
       expect(find.text('Rapido Bike Parcel'), findsOneWidget);
     });
   });

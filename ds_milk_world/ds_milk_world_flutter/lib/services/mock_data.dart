@@ -4,9 +4,9 @@ class MockData {
   static final Outlet outlet = Outlet(
     name: 'DS Milk World',
     phone: '+91 866 254 9999',
-    address: 'Near Auto Nagar Gate, Bandar Road, Auto Nagar, Vijayawada, AP 520007',
-    latitude: 16.4950,
-    longitude: 80.6650,
+    address: 'Near Kanuru Center, Bandar Road, Kanuru, Vijayawada, AP 520007',
+    latitude: 16.4850,
+    longitude: 80.6900,
     status: 'open',
     serviceRadiusM: 5000,
     timezone: 'Asia/Kolkata',

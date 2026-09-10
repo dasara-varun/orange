@@ -17,8 +17,8 @@ class _AddressQuoteScreenState extends State<AddressQuoteScreen> {
   final _formKey = GlobalKey<FormState>();
   final _phoneController = TextEditingController(text: '9876543210');
   final _nameController = TextEditingController(text: 'Ravi Teja');
-  final _addressController = TextEditingController(text: 'Flat 301, Sri Krishna Residency, Auto Nagar');
-  final _landmarkController = TextEditingController(text: 'Near Auto Nagar Gate');
+  final _addressController = TextEditingController(text: 'Flat 204, Kanuru Main Road, Kanuru, Vijayawada');
+  final _landmarkController = TextEditingController(text: 'Near Kanuru Center');
 
   // Interactive Map Pin toggle
   bool _useMapPicker = true;
@@ -26,28 +26,34 @@ class _AddressQuoteScreenState extends State<AddressQuoteScreen> {
   // Pre-configured coordinate presets in Vijayawada for testing & ease of use
   final List<Map<String, dynamic>> _locationPresets = [
     {
-      'name': 'Auto Nagar (1.2 km)',
-      'lat': 16.5020,
-      'lng': 80.6680,
+      'name': 'Kanuru (0.5 km)',
+      'lat': 16.4850,
+      'lng': 80.6900,
+      'address': 'Flat 204, Kanuru Main Road, Kanuru, Vijayawada',
+    },
+    {
+      'name': 'Tadigadapa (1.2 km)',
+      'lat': 16.4800,
+      'lng': 80.6800,
+      'address': 'Tadigadapa Donka Road, Vijayawada',
+    },
+    {
+      'name': 'Poranki (1.8 km)',
+      'lat': 16.4780,
+      'lng': 80.7050,
+      'address': 'Poranki Center, Bandar Road, Vijayawada',
+    },
+    {
+      'name': 'Auto Nagar (2.9 km)',
+      'lat': 16.4950,
+      'lng': 80.6650,
       'address': 'Plot 45, Industrial Estate, Auto Nagar, Vijayawada',
     },
     {
-      'name': 'Benz Circle (3.1 km)',
+      'name': 'Benz Circle (4.9 km)',
       'lat': 16.5000,
       'lng': 80.6400,
       'address': 'MG Road, Near Benz Circle, Vijayawada',
-    },
-    {
-      'name': 'Patamata (2.3 km)',
-      'lat': 16.4980,
-      'lng': 80.6500,
-      'address': 'High School Road, Patamata, Vijayawada',
-    },
-    {
-      'name': 'Governorpet (4.6 km)',
-      'lat': 16.5100,
-      'lng': 80.6250,
-      'address': 'Prakasam Road, Governorpet, Vijayawada',
     },
     {
       'name': 'Gannavaram Airport (14.5 km - Out of service)',
@@ -58,8 +64,8 @@ class _AddressQuoteScreenState extends State<AddressQuoteScreen> {
   ];
 
   int _selectedPresetIndex = 0;
-  double _selectedLat = 16.5020;
-  double _selectedLng = 80.6680;
+  double _selectedLat = 16.4850;
+  double _selectedLng = 80.6900;
 
   bool _isLoadingQuote = false;
   DeliveryQuote? _quote;
@@ -71,7 +77,7 @@ class _AddressQuoteScreenState extends State<AddressQuoteScreen> {
       _selectedLng = loc.longitude;
       final roadInfo = loc.roadDistanceText != null
           ? '${loc.roadDistanceText} (~${loc.durationMinutes ?? 12} mins ETA)'
-          : '${loc.distanceKm} km from Auto Nagar';
+          : '${loc.distanceKm} km from Kanuru';
       _quote = DeliveryQuote(
         serviceable: loc.isServiceable,
         distanceKm: loc.distanceKm,
@@ -213,7 +219,7 @@ class _AddressQuoteScreenState extends State<AddressQuoteScreen> {
                     const SizedBox(width: 10),
                     const Expanded(
                       child: Text(
-                        'Delivering from DS Milk World, Auto Nagar Gate, Bandar Road, Vijayawada (Max 5.0 km radius)',
+                        'Delivering from DS Milk World, Kanuru Center, Bandar Road, Vijayawada (Max 5.0 km radius)',
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
