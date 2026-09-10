@@ -1,6 +1,6 @@
 ---
 name: git-github-manager
-description: Manage git and GitHub workflows — branching, staging, committing, pushing, resolving conflicts, rebasing/history cleanup, opening and reviewing pull requests, managing issues, and cutting releases/tags. Follows a commit-often/push-often, branch-liberally workflow where main/master always stays deployable, and watches for common gotchas (uncommitted work lost on branch switch, detached HEAD, stale/diverged branches, secrets in history, force-push risk, submodule drift, silent CI failures). Use this skill whenever the user asks to commit, branch, push, open a PR, review a diff, resolve a merge conflict, rebase, squash commits, tag a release, or manage GitHub issues/PRs — even if they just say "commit this," "push my changes," "make a PR," or "clean up my branch," without naming git or GitHub explicitly. Also use for repo hygiene tasks like writing a .gitignore, undoing a commit, recovering lost commits, or investigating history with git log/blame.
+description: Manage git and GitHub workflows — branching, staging, committing, pushing, resolving conflicts, rebasing/history cleanup, opening and reviewing pull requests, managing issues, and cutting releases/tags. Enforces an aggressive micro-commit and immediate-push protocol: commit immediately after every notable change (file edit, bugfix, new feature, component tweak, passing test), and push immediately after every commit to maintain real-time remote synchronization and instant rollback capability. Follows a commit-often/push-often, branch-liberally workflow where main/master always stays deployable, and watches for common gotchas (uncommitted work lost on branch switch, detached HEAD, stale/diverged branches, secrets in history, force-push risk, submodule drift, silent CI failures). Use this skill whenever the user asks to commit, branch, push, open a PR, review a diff, resolve a merge conflict, rebase, squash commits, tag a release, or manage GitHub issues/PRs — even if they just say "commit this," "push my changes," "make a PR," or "clean up my branch," without naming git or GitHub explicitly. Also use for repo hygiene tasks like writing a .gitignore, undoing a commit, recovering lost commits, or investigating history with git log/blame.
 ---
 
 # Git & GitHub Manager
@@ -29,16 +29,41 @@ gh auth status 2>&1
 
 ## Core principles
 
-1. **Commit frequently.** Don't let work pile up uncommitted. Commit at natural checkpoints — a working function, a passing test, a logical chunk of a larger change — rather than one giant commit at the end. Small, frequent commits are easier to review, bisect, and revert. If the user has been working for a while with no commits, proactively suggest committing what's stable so far.
-2. **Push often.** Once something is committed and the branch is in a reasonable state, push it. Local-only commits aren't backed up and aren't visible to collaborators or CI. Don't stockpile many local commits before pushing — push after every commit or every few, unless the user says otherwise.
+1. **Commit immediately after every notable change (Micro-commit cadence).** Never let work accumulate uncommitted across multiple tasks, files, or iterations. As soon as any coherent, notable change is completed — an updated widget, a newly added endpoint or service method, a styling fix, a passing test, or a docs refinement — stage and commit it immediately. Micro-commits provide clear, fine-grained checkpoints, make code reviews effortless, and allow instant pinpoint rollbacks with `git revert <commit-hash>`.
+2. **Push immediately after every commit (Zero-stockpile push cadence).** Push to the remote tracking branch immediately after committing. Never accumulate or stockpile unpushed local commits. Pushing immediately guarantees remote backups on GitHub, triggers CI workflows in real-time, avoids divergent histories, and ensures the remote is always 100% synchronized with the working tree.
 3. **Use branches liberally; `main` (or `master`) is always the source of truth for final, working code.** Any nontrivial change — a feature, a fix, an experiment — gets its own branch. Never commit directly to `main` for anything beyond trivial fixes (typos, docs) without checking with the user first. Multiple branches can exist in parallel; that's expected and fine. See "Branch strategy" below for the full policy.
 4. **Never force-push or rewrite shared history without explicit confirmation.** `push --force`, `rebase` on a branch others may have pulled, `reset --hard`, and deleting branches are all destructive. Show the user what will happen (e.g. `git log` of what's about to be lost) and get a clear go-ahead first, unless they already gave a blanket instruction in this conversation. This applies doubly to `main`.
 5. **Always show a diff or status before committing.** Run `git status` and `git diff` (or `git diff --staged` once staged) and briefly summarize what's changing before writing a commit. Don't stage/commit blind.
 6. **Never commit secrets.** If a diff includes what looks like an API key, token, password, or `.env` contents, flag it and ask before committing, even if the user didn't ask you to check.
-7. **Write commit messages from the actual diff, not the request.** Base the message on what the code changes actually do, in imperative mood ("Add", "Fix", "Refactor"), not a restatement of the user's instruction. No strong style mandate — Conventional Commits (`feat:`, `fix:`) is fine if the repo already uses that convention (check `git log --oneline -15`); otherwise plain descriptive messages are fine. Stay consistent with whatever the repo already does.
-8. **Keep commits focused.** Frequent commits and focused commits go together — if unrelated changes are mixed together and the user hasn't said otherwise, ask whether they want them split into separate commits rather than bundling silently.
-9. **Before merging anything into `main`, verify it actually works.** Run the project's test/build/lint commands if they exist (check `package.json` scripts, `Makefile`, CI config in `.github/workflows/`) before merging or right after, and don't report a merge as done if checks are failing. `main` should never be left in a known-broken state.
+7. **Write commit messages from the actual diff, not the request.** Base the message on what the code changes actually do, in imperative mood ("Add", "Fix", "Refactor"), not a restatement of the user's instruction. Conventional Commits (`feat:`, `fix:`, `refactor:`, `style:`, `test:`, `docs:`) is preferred.
+8. **Keep commits strictly atomic.** Each commit should represent a single logical change. If unrelated changes are present, stage and commit them separately in sequence, pushing after each one.
+9. **Before merging or pushing, verify it actually works.** Run the project's test/build/lint commands if they exist (e.g. `flutter analyze`, `flutter test`, `dart test`, `npm test`) so that every commit pushed to the remote is green and deployable.
 10. **One clarifying question max, and only if truly ambiguous** (e.g. "push my changes" with no upstream configured yet, or multiple remotes). Otherwise proceed and state the assumption inline (e.g. "pushing to origin/main since that's the current upstream").
+
+## ⚡ Rapid Micro-Commit & Immediate-Push Protocol (High Cadence)
+
+Follow this rapid 5-step loop for **every notable unit of work**:
+
+1. **Complete a single notable change** (e.g., refactored a component, added a new feature, fixed a bug, updated docs/tests).
+2. **Quick validation**: Run fast static analysis / tests to ensure green state.
+3. **Inspect status & diff**:
+   ```bash
+   git status --short
+   git diff
+   ```
+4. **Stage & commit atomically**:
+   ```bash
+   git add <modified-files>
+   git commit -m "<type>(<scope>): <concise, descriptive summary of this exact change>"
+   ```
+5. **Push immediately to remote**:
+   ```bash
+   git push origin <current-branch>
+   ```
+6. **Confirm clean tree**:
+   ```bash
+   git status
+   ```
 
 ## Common workflows
 
@@ -87,11 +112,13 @@ Treat `main`/`master` as sacred — it should always reflect final, working code
   ```
 - **If asked to "fix something quickly on main"**, still push back gently: suggest a short-lived branch even for small fixes, unless the user explicitly overrides.
 
-### Pushing
+### Pushing (Immediate & Frequent)
+
+Push to the remote branch **immediately after every single commit**. Never hoard local commits.
 
 ```bash
 git push -u origin <branch-name>     # first push of a new branch
-git push                              # subsequent pushes
+git push                              # subsequent pushes (run after every commit)
 ```
 
 If the push is rejected (non-fast-forward), do NOT force-push automatically — explain that the remote has commits the local branch doesn't, and offer `git pull --rebase` (rewrites local commits on top of remote) vs `git merge` (creates a merge commit) as options, unless the user has a standing preference.
