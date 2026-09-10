@@ -9,6 +9,7 @@ admin:
   - getOrderEvents:
   - listAllOrders:
   - updateProductDetails:
+  - verifyStaffPin:
 catalog:
   - getCatalog:
   - updateProductAvailability:

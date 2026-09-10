@@ -25,6 +25,7 @@ abstract class Outlet implements _i1.SerializableModel {
     required this.openingTime,
     required this.closingTime,
     required this.minOrderPaise,
+    this.staffPin,
   });
 
   factory Outlet({
@@ -40,6 +41,7 @@ abstract class Outlet implements _i1.SerializableModel {
     required String openingTime,
     required String closingTime,
     required int minOrderPaise,
+    String? staffPin,
   }) = _OutletImpl;
 
   factory Outlet.fromJson(Map<String, dynamic> jsonSerialization) {
@@ -56,6 +58,7 @@ abstract class Outlet implements _i1.SerializableModel {
       openingTime: jsonSerialization['openingTime'] as String,
       closingTime: jsonSerialization['closingTime'] as String,
       minOrderPaise: jsonSerialization['minOrderPaise'] as int,
+      staffPin: jsonSerialization['staffPin'] as String?,
     );
   }
 
@@ -86,6 +89,8 @@ abstract class Outlet implements _i1.SerializableModel {
 
   int minOrderPaise;
 
+  String? staffPin;
+
   /// Returns a shallow copy of this [Outlet]
   /// with some or all fields replaced by the given arguments.
   @_i1.useResult
@@ -102,6 +107,7 @@ abstract class Outlet implements _i1.SerializableModel {
     String? openingTime,
     String? closingTime,
     int? minOrderPaise,
+    String? staffPin,
   });
   @override
   Map<String, dynamic> toJson() {
@@ -118,6 +124,7 @@ abstract class Outlet implements _i1.SerializableModel {
       'openingTime': openingTime,
       'closingTime': closingTime,
       'minOrderPaise': minOrderPaise,
+      if (staffPin != null) 'staffPin': staffPin,
     };
   }
 
@@ -143,6 +150,7 @@ class _OutletImpl extends Outlet {
     required String openingTime,
     required String closingTime,
     required int minOrderPaise,
+    String? staffPin,
   }) : super._(
           id: id,
           name: name,
@@ -156,6 +164,7 @@ class _OutletImpl extends Outlet {
           openingTime: openingTime,
           closingTime: closingTime,
           minOrderPaise: minOrderPaise,
+          staffPin: staffPin,
         );
 
   /// Returns a shallow copy of this [Outlet]
@@ -175,6 +184,7 @@ class _OutletImpl extends Outlet {
     String? openingTime,
     String? closingTime,
     int? minOrderPaise,
+    Object? staffPin = _Undefined,
   }) {
     return Outlet(
       id: id is int? ? id : this.id,
@@ -189,6 +199,7 @@ class _OutletImpl extends Outlet {
       openingTime: openingTime ?? this.openingTime,
       closingTime: closingTime ?? this.closingTime,
       minOrderPaise: minOrderPaise ?? this.minOrderPaise,
+      staffPin: staffPin is String? ? staffPin : this.staffPin,
     );
   }
 }

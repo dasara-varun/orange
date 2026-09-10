@@ -340,6 +340,24 @@ class Endpoints extends _i1.EndpointDispatch {
             params['shortDescription'],
           ),
         ),
+        'verifyStaffPin': _i1.MethodConnector(
+          name: 'verifyStaffPin',
+          params: {
+            'pin': _i1.ParameterDescription(
+              name: 'pin',
+              type: _i1.getType<String>(),
+              nullable: false,
+            )
+          },
+          call: (
+            _i1.Session session,
+            Map<String, dynamic> params,
+          ) async =>
+              (endpoints['admin'] as _i2.AdminEndpoint).verifyStaffPin(
+            session,
+            params['pin'],
+          ),
+        ),
       },
     );
     connectors['catalog'] = _i1.EndpointConnector(

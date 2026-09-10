@@ -1,5 +1,6 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
+import '../services/api_service.dart';
 import 'staff_console_screen.dart';
 
 class OutletLoginScreen extends StatefulWidget {
@@ -13,10 +14,11 @@ class OutletLoginScreen extends StatefulWidget {
 
 class _OutletLoginScreenState extends State<OutletLoginScreen> {
   String _enteredPin = '';
-  static const String correctPin = '1234';
+  bool _isVerifying = false;
   String? _errorMessage;
 
   void _onDigitPressed(String digit) {
+    if (_isVerifying) return;
     if (_enteredPin.length < 4) {
       setState(() {
         _enteredPin += digit;
@@ -30,6 +32,7 @@ class _OutletLoginScreenState extends State<OutletLoginScreen> {
   }
 
   void _onBackspace() {
+    if (_isVerifying) return;
     if (_enteredPin.isNotEmpty) {
       setState(() {
         _enteredPin = _enteredPin.substring(0, _enteredPin.length - 1);
@@ -39,14 +42,22 @@ class _OutletLoginScreenState extends State<OutletLoginScreen> {
   }
 
   void _onClear() {
+    if (_isVerifying) return;
     setState(() {
       _enteredPin = '';
       _errorMessage = null;
     });
   }
 
-  void _verifyPin() {
-    if (_enteredPin == correctPin) {
+  Future<void> _verifyPin() async {
+    setState(() => _isVerifying = true);
+    final pinToCheck = _enteredPin;
+    final isValid = await ApiService.instance.verifyStaffPin(pinToCheck);
+
+    if (!mounted) return;
+    setState(() => _isVerifying = false);
+
+    if (isValid) {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
@@ -63,7 +74,7 @@ class _OutletLoginScreenState extends State<OutletLoginScreen> {
       );
     } else {
       setState(() {
-        _errorMessage = 'Incorrect PIN. Try default: 1234';
+        _errorMessage = 'Incorrect PIN. Enter valid staff PIN (Default: 1979)';
         _enteredPin = '';
       });
     }
@@ -182,7 +193,7 @@ class _OutletLoginScreenState extends State<OutletLoginScreen> {
                         Icon(Icons.key, size: 14, color: AppTheme.cocoa),
                         SizedBox(width: 6),
                         Text(
-                          'Staff Demo PIN: 1234',
+                          'Staff PIN: 1979',
                           style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.cocoa),
                         ),
                       ],

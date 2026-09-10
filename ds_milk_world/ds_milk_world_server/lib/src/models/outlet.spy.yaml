@@ -12,3 +12,4 @@ fields:
   openingTime: String
   closingTime: String
   minOrderPaise: int
+  staffPin: String?

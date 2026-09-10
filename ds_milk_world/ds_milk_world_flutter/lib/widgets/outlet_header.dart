@@ -286,7 +286,7 @@ class _OutletHeaderState extends State<OutletHeader> {
               widget.onSearchChanged?.call(val);
             },
             decoration: InputDecoration(
-              hintText: 'Search 147 fresh faloodas, shakes, buttermilk, kulfis...',
+              hintText: 'Search 116 fresh faloodas, shakes, buttermilk, lassi...',
               prefixIcon: const Icon(Icons.search, color: AppTheme.muted, size: 20),
               suffixIcon: _searchController.text.isNotEmpty
                   ? IconButton(

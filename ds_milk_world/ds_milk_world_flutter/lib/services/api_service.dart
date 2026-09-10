@@ -75,6 +75,15 @@ class ApiService {
     }
   }
 
+  Future<bool> verifyStaffPin(String pin) async {
+    try {
+      return await client.admin.verifyStaffPin(pin).timeout(const Duration(milliseconds: 2000));
+    } catch (_) {
+      final outlet = MockData.outlet;
+      return (outlet.staffPin ?? '1979') == pin;
+    }
+  }
+
   Future<DeliveryQuote> getDeliveryQuote(double lat, double lng) async {
     try {
       return await client.quote.getDeliveryQuote(lat, lng).timeout(const Duration(milliseconds: 1500));

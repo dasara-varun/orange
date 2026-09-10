@@ -147,6 +147,13 @@ class EndpointAdmin extends _i1.EndpointRef {
           'shortDescription': shortDescription,
         },
       );
+
+  _i2.Future<bool> verifyStaffPin(String pin) =>
+      caller.callServerEndpoint<bool>(
+        'admin',
+        'verifyStaffPin',
+        {'pin': pin},
+      );
 }
 
 /// {@category Endpoint}

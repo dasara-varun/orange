@@ -6,11 +6,17 @@ import 'package:ds_milk_world_server/src/services/order_service.dart';
 
 void main() {
   group('CatalogService Tests', () {
-    test('Catalog contains 147 items and 9 categories', () {
+    test('Catalog contains 116 items and 7 categories with staffPin 1979', () {
       final catalog = CatalogService.getCatalog();
-      expect(catalog.products.length, equals(147));
-      expect(catalog.categories.length, equals(9));
+      expect(catalog.products.length, equals(116));
+      expect(catalog.categories.length, equals(7));
       expect(catalog.outlet.name, equals('DS Milk World'));
+      expect(catalog.outlet.staffPin, equals('1979'));
+      // Verify no non-deliverable ice cream or kulfi items exist
+      expect(catalog.categories.any((c) => c.name == 'Ice Cream'), isFalse);
+      expect(catalog.categories.any((c) => c.name == 'Kulfi'), isFalse);
+      expect(catalog.products.any((p) => p.categoryName == 'Ice Cream'), isFalse);
+      expect(catalog.products.any((p) => p.categoryName == 'Kulfi'), isFalse);
     });
 
     test('All items have positive prices in paise', () {

@@ -61,7 +61,6 @@ class _InteractiveMapPickerState extends State<InteractiveMapPicker> {
 
   late double _currentLat;
   late double _currentLng;
-  bool _isDragging = false;
   bool _isLocating = false;
 
   final MapController _mapController = MapController();
@@ -154,15 +153,13 @@ class _InteractiveMapPickerState extends State<InteractiveMapPicker> {
 
   void _onMapPanned(LatLng center) {
     setState(() {
-      _isDragging = true;
       _currentLat = center.latitude;
       _currentLng = center.longitude;
     });
 
     _debounceTimer?.cancel();
-    _debounceTimer = Timer(const Duration(milliseconds: 400), () {
+    _debounceTimer = Timer(const Duration(milliseconds: 300), () {
       if (mounted) {
-        setState(() => _isDragging = false);
         _fetchQuoteForPosition(center.latitude, center.longitude);
       }
     });
@@ -420,6 +417,9 @@ class _InteractiveMapPickerState extends State<InteractiveMapPicker> {
                       initialZoom: 14.5,
                       minZoom: 10.0,
                       maxZoom: 18.0,
+                      interactionOptions: const InteractionOptions(
+                        flags: InteractiveFlag.all,
+                      ),
                       onPositionChanged: (MapCamera camera, bool hasGesture) {
                         if (hasGesture) {
                           _onMapPanned(camera.center);
@@ -430,11 +430,10 @@ class _InteractiveMapPickerState extends State<InteractiveMapPicker> {
                       },
                     ),
                     children: [
-                      // Leaflet / OpenStreetMap CartoDB Voyager Retina Tile Layer
+                      // OpenStreetMap standard tile layer (Pure open source, zero API keys required)
                       TileLayer(
-                        urlTemplate: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png',
-                        subdomains: const ['a', 'b', 'c', 'd'],
-                        userAgentPackageName: 'com.example.ds_milk_world_flutter',
+                        urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                        userAgentPackageName: 'org.openstreetmap.dsmilkworld',
                         maxZoom: 19,
                       ),
 
@@ -460,9 +459,25 @@ class _InteractiveMapPickerState extends State<InteractiveMapPicker> {
                         ],
                       ),
 
-                      // Outlet Marker (DS Milk World Auto Nagar)
+                      // Delivery Route Polyline connecting Auto Nagar Outlet to Delivery Pin
+                      PolylineLayer(
+                        polylines: [
+                          Polyline(
+                            points: [
+                              const LatLng(outletLat, outletLng),
+                              LatLng(_currentLat, _currentLng),
+                            ],
+                            strokeWidth: 3.0,
+                            color: isServiceable ? AppTheme.saffronDark : AppTheme.error,
+                            pattern: StrokePattern.dashed(segments: const [6, 4]),
+                          ),
+                        ],
+                      ),
+
+                      // Markers (Outlet and Delivery Location Pin)
                       MarkerLayer(
                         markers: [
+                          // Outlet Marker (DS Milk World Auto Nagar)
                           Marker(
                             point: const LatLng(outletLat, outletLng),
                             width: 100,
@@ -503,63 +518,48 @@ class _InteractiveMapPickerState extends State<InteractiveMapPicker> {
                               ],
                             ),
                           ),
-                        ],
-                      ),
-                    ],
-                  ),
 
-                  // Fixed Center Delivery Pin (Lifts up on drag like Rapido)
-                  IgnorePointer(
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 150),
-                      transform: Matrix4.translationValues(0, _isDragging ? -20 : -10, 0),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                            decoration: BoxDecoration(
-                              color: isServiceable ? AppTheme.cocoa : AppTheme.error,
-                              borderRadius: BorderRadius.circular(5),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withValues(alpha: _isDragging ? 0.35 : 0.2),
-                                  blurRadius: _isDragging ? 8 : 4,
-                                  offset: Offset(0, _isDragging ? 6 : 2),
+                          // Customer Delivery Spot Marker anchored at LatLng(_currentLat, _currentLng)
+                          Marker(
+                            point: LatLng(_currentLat, _currentLng),
+                            width: 120,
+                            height: 76,
+                            alignment: Alignment.bottomCenter,
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: isServiceable ? AppTheme.cocoa : AppTheme.error,
+                                    borderRadius: BorderRadius.circular(6),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withValues(alpha: 0.25),
+                                        blurRadius: 4,
+                                        offset: const Offset(0, 2),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Text(
+                                    isServiceable ? 'Deliver Here' : 'Out of 5 km Limit',
+                                    style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                                  ),
+                                ),
+                                Icon(
+                                  Icons.location_on,
+                                  color: isServiceable ? AppTheme.rose : AppTheme.error,
+                                  size: 36,
+                                  shadows: const [
+                                    Shadow(color: Colors.black38, blurRadius: 4, offset: Offset(0, 2)),
+                                  ],
                                 ),
                               ],
                             ),
-                            child: Text(
-                              _isDragging
-                                  ? 'Pan to Delivery Spot'
-                                  : (isServiceable ? 'Deliver Here' : 'Out of 5 km Limit'),
-                              style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
-                            ),
-                          ),
-                          Icon(
-                            Icons.location_on,
-                            color: isServiceable ? AppTheme.rose : AppTheme.error,
-                            size: _isDragging ? 42 : 36,
-                            shadows: [
-                              Shadow(
-                                color: Colors.black.withValues(alpha: _isDragging ? 0.4 : 0.2),
-                                blurRadius: _isDragging ? 8 : 4,
-                                offset: Offset(0, _isDragging ? 6 : 2),
-                              ),
-                            ],
-                          ),
-                          // Pin ground shadow
-                          Container(
-                            width: _isDragging ? 12 : 8,
-                            height: 4,
-                            decoration: BoxDecoration(
-                              color: Colors.black.withValues(alpha: _isDragging ? 0.15 : 0.35),
-                              borderRadius: BorderRadius.circular(4),
-                            ),
                           ),
                         ],
                       ),
-                    ),
+                    ],
                   ),
 
                   // Top left: 5.0 km Freshness Perimeter badge
@@ -590,7 +590,7 @@ class _InteractiveMapPickerState extends State<InteractiveMapPicker> {
                     ),
                   ),
 
-                  // Map drag instruction & Leaflet / OpenStreetMap attribution
+                  // Map tap/drag instruction & OpenStreetMap attribution
                   Positioned(
                     left: 8,
                     bottom: 8,
@@ -601,7 +601,7 @@ class _InteractiveMapPickerState extends State<InteractiveMapPicker> {
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: const Text(
-                        'Leaflet Maps • © OpenStreetMap, © CARTO • Drag / Tap pin',
+                        '© OpenStreetMap contributors • Tap map to set delivery pin',
                         style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w600),
                       ),
                     ),

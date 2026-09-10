@@ -25,6 +25,7 @@ abstract class Outlet implements _i1.TableRow<int?>, _i1.ProtocolSerialization {
     required this.openingTime,
     required this.closingTime,
     required this.minOrderPaise,
+    this.staffPin,
   });
 
   factory Outlet({
@@ -40,6 +41,7 @@ abstract class Outlet implements _i1.TableRow<int?>, _i1.ProtocolSerialization {
     required String openingTime,
     required String closingTime,
     required int minOrderPaise,
+    String? staffPin,
   }) = _OutletImpl;
 
   factory Outlet.fromJson(Map<String, dynamic> jsonSerialization) {
@@ -56,6 +58,7 @@ abstract class Outlet implements _i1.TableRow<int?>, _i1.ProtocolSerialization {
       openingTime: jsonSerialization['openingTime'] as String,
       closingTime: jsonSerialization['closingTime'] as String,
       minOrderPaise: jsonSerialization['minOrderPaise'] as int,
+      staffPin: jsonSerialization['staffPin'] as String?,
     );
   }
 
@@ -88,6 +91,8 @@ abstract class Outlet implements _i1.TableRow<int?>, _i1.ProtocolSerialization {
 
   int minOrderPaise;
 
+  String? staffPin;
+
   @override
   _i1.Table<int?> get table => t;
 
@@ -107,6 +112,7 @@ abstract class Outlet implements _i1.TableRow<int?>, _i1.ProtocolSerialization {
     String? openingTime,
     String? closingTime,
     int? minOrderPaise,
+    String? staffPin,
   });
   @override
   Map<String, dynamic> toJson() {
@@ -123,6 +129,7 @@ abstract class Outlet implements _i1.TableRow<int?>, _i1.ProtocolSerialization {
       'openingTime': openingTime,
       'closingTime': closingTime,
       'minOrderPaise': minOrderPaise,
+      if (staffPin != null) 'staffPin': staffPin,
     };
   }
 
@@ -141,6 +148,7 @@ abstract class Outlet implements _i1.TableRow<int?>, _i1.ProtocolSerialization {
       'openingTime': openingTime,
       'closingTime': closingTime,
       'minOrderPaise': minOrderPaise,
+      if (staffPin != null) 'staffPin': staffPin,
     };
   }
 
@@ -190,6 +198,7 @@ class _OutletImpl extends Outlet {
     required String openingTime,
     required String closingTime,
     required int minOrderPaise,
+    String? staffPin,
   }) : super._(
           id: id,
           name: name,
@@ -203,6 +212,7 @@ class _OutletImpl extends Outlet {
           openingTime: openingTime,
           closingTime: closingTime,
           minOrderPaise: minOrderPaise,
+          staffPin: staffPin,
         );
 
   /// Returns a shallow copy of this [Outlet]
@@ -222,6 +232,7 @@ class _OutletImpl extends Outlet {
     String? openingTime,
     String? closingTime,
     int? minOrderPaise,
+    Object? staffPin = _Undefined,
   }) {
     return Outlet(
       id: id is int? ? id : this.id,
@@ -236,6 +247,7 @@ class _OutletImpl extends Outlet {
       openingTime: openingTime ?? this.openingTime,
       closingTime: closingTime ?? this.closingTime,
       minOrderPaise: minOrderPaise ?? this.minOrderPaise,
+      staffPin: staffPin is String? ? staffPin : this.staffPin,
     );
   }
 }
@@ -286,6 +298,10 @@ class OutletTable extends _i1.Table<int?> {
       'minOrderPaise',
       this,
     );
+    staffPin = _i1.ColumnString(
+      'staffPin',
+      this,
+    );
   }
 
   late final _i1.ColumnString name;
@@ -310,6 +326,8 @@ class OutletTable extends _i1.Table<int?> {
 
   late final _i1.ColumnInt minOrderPaise;
 
+  late final _i1.ColumnString staffPin;
+
   @override
   List<_i1.Column> get columns => [
         id,
@@ -324,6 +342,7 @@ class OutletTable extends _i1.Table<int?> {
         openingTime,
         closingTime,
         minOrderPaise,
+        staffPin,
       ];
 }
 

@@ -113,4 +113,17 @@ class AdminEndpoint extends Endpoint {
       shortDescription: shortDescription,
     );
   }
+
+  Future<bool> verifyStaffPin(
+    Session session,
+    String pin,
+  ) async {
+    try {
+      final outlet = await Outlet.db.findFirstRow(session);
+      if (outlet != null && outlet.staffPin != null && outlet.staffPin!.isNotEmpty) {
+        return outlet.staffPin == pin;
+      }
+    } catch (_) {}
+    return (CatalogService.outlet.staffPin ?? '1979') == pin;
+  }
 }
