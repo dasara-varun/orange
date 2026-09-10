@@ -20,6 +20,7 @@ class _StaffConsoleScreenState extends State<StaffConsoleScreen> with SingleTick
   bool _isLoading = true;
   Timer? _pollingTimer;
   String _catalogSearch = '';
+  String _orderSearchQuery = '';
 
   @override
   void initState() {
@@ -161,48 +162,79 @@ class _StaffConsoleScreenState extends State<StaffConsoleScreen> with SingleTick
   void _showMarkReadyDialog(OrderRecord order) {
     bool isChilled = true;
     bool isSealed = true;
+    final Map<int, bool> itemChecked = {for (int i = 0; i < order.items.length; i++) i: true};
 
     showDialog(
       context: context,
       builder: (ctx) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog(
-          title: Text('Ready for Pickup #${order.orderNumber}'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text('Verify packaging requirements before dispatch:', style: TextStyle(fontSize: 13)),
-              const SizedBox(height: 12),
-              CheckboxListTile(
-                value: isChilled,
-                activeColor: AppTheme.saffronDark,
-                title: const Text('Cold drinks/faloodas packed chilled', style: TextStyle(fontSize: 13)),
-                onChanged: (v) => setDialogState(() => isChilled = v ?? false),
+        builder: (context, setDialogState) {
+          final allItemsChecked = itemChecked.values.every((checked) => checked);
+          final canConfirm = isChilled && isSealed && allItemsChecked;
+
+          return AlertDialog(
+            title: Text('Ready for Pickup #${order.orderNumber}'),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('1. Verify Kitchen Items Prepared:', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppTheme.cocoa)),
+                  const SizedBox(height: 6),
+                  ...order.items.asMap().entries.map((entry) {
+                    final idx = entry.key;
+                    final item = entry.value;
+                    return CheckboxListTile(
+                      dense: true,
+                      contentPadding: EdgeInsets.zero,
+                      value: itemChecked[idx] ?? false,
+                      activeColor: AppTheme.saffronDark,
+                      title: Text('${item.quantity}x ${item.nameSnapshot}', style: const TextStyle(fontSize: 13)),
+                      subtitle: item.optionsSnapshot != null
+                          ? Text(item.optionsSnapshot!, style: const TextStyle(fontSize: 11, color: AppTheme.muted))
+                          : null,
+                      onChanged: (v) => setDialogState(() => itemChecked[idx] = v ?? false),
+                    );
+                  }),
+                  const Divider(height: 20),
+                  const Text('2. Packaging & Security:', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppTheme.cocoa)),
+                  const SizedBox(height: 6),
+                  CheckboxListTile(
+                    dense: true,
+                    contentPadding: EdgeInsets.zero,
+                    value: isChilled,
+                    activeColor: AppTheme.saffronDark,
+                    title: const Text('Cold drinks/faloodas packed chilled', style: TextStyle(fontSize: 13)),
+                    onChanged: (v) => setDialogState(() => isChilled = v ?? false),
+                  ),
+                  CheckboxListTile(
+                    dense: true,
+                    contentPadding: EdgeInsets.zero,
+                    value: isSealed,
+                    activeColor: AppTheme.saffronDark,
+                    title: const Text('Tamper-evident security tape applied', style: TextStyle(fontSize: 13)),
+                    onChanged: (v) => setDialogState(() => isSealed = v ?? false),
+                  ),
+                ],
               ),
-              CheckboxListTile(
-                value: isSealed,
-                activeColor: AppTheme.saffronDark,
-                title: const Text('Tamper-evident security tape applied', style: TextStyle(fontSize: 13)),
-                onChanged: (v) => setDialogState(() => isSealed = v ?? false),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: !canConfirm
+                    ? null
+                    : () async {
+                        Navigator.pop(ctx);
+                        await ApiService.instance.markReady(order.orderNumber);
+                        _loadData();
+                      },
+                child: const Text('Confirm Ready for Pickup'),
               ),
             ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: (!isChilled || !isSealed)
-                  ? null
-                  : () async {
-                      Navigator.pop(ctx);
-                      await ApiService.instance.markReady(order.orderNumber);
-                      _loadData();
-                    },
-              child: const Text('Confirm Ready for Pickup'),
-            ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
@@ -625,7 +657,7 @@ class _StaffConsoleScreenState extends State<StaffConsoleScreen> with SingleTick
             Tab(text: 'Ready (${readyOrders.length})'),
             Tab(text: 'Out for Delivery (${outOrders.length})'),
             Tab(text: 'Completed (${doneOrders.length})'),
-            const Tab(text: 'Menu Catalog (79)'),
+            Tab(text: 'Menu Catalog (${_catalog?.products.length ?? 116})'),
             const Tab(text: 'Reports & Stats'),
           ],
         ),
@@ -679,30 +711,58 @@ class _StaffConsoleScreenState extends State<StaffConsoleScreen> with SingleTick
   }
 
   Widget _buildOrderList(List<OrderRecord> list, String stage) {
-    if (list.isEmpty) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(32),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.inbox_outlined, size: 48, color: Colors.grey[400]),
-              const SizedBox(height: 12),
-              Text(
-                'No orders in this stage',
-                style: TextStyle(color: Colors.grey[600], fontSize: 14, fontWeight: FontWeight.w600),
-              ),
-            ],
+    final filtered = list.where((o) {
+      if (_orderSearchQuery.isEmpty) return true;
+      final q = _orderSearchQuery.toLowerCase();
+      return o.orderNumber.toLowerCase().contains(q) ||
+          (o.customerName?.toLowerCase().contains(q) ?? false) ||
+          o.customerPhone.toLowerCase().contains(q);
+    }).toList();
+
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(12, 10, 12, 2),
+          child: TextField(
+            onChanged: (v) => setState(() => _orderSearchQuery = v.trim()),
+            decoration: InputDecoration(
+              hintText: 'Search order #, customer name, or phone...',
+              prefixIcon: const Icon(Icons.search, size: 18),
+              suffixIcon: _orderSearchQuery.isNotEmpty
+                  ? IconButton(
+                      icon: const Icon(Icons.clear, size: 16),
+                      onPressed: () => setState(() => _orderSearchQuery = ''),
+                    )
+                  : null,
+              isDense: true,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+            ),
           ),
         ),
-      );
-    }
-
-    return ListView.builder(
-      padding: const EdgeInsets.all(12),
-      itemCount: list.length,
-      itemBuilder: (context, idx) {
-        final order = list[idx];
+        Expanded(
+          child: filtered.isEmpty
+              ? Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(32),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.inbox_outlined, size: 48, color: Colors.grey[400]),
+                        const SizedBox(height: 12),
+                        Text(
+                          _orderSearchQuery.isEmpty ? 'No orders in this stage' : 'No matching orders found',
+                          style: TextStyle(color: Colors.grey[600], fontSize: 14, fontWeight: FontWeight.w600),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              : ListView.builder(
+                  padding: const EdgeInsets.all(12),
+                  itemCount: filtered.length,
+                  itemBuilder: (context, idx) {
+                    final order = filtered[idx];
         return Card(
           margin: const EdgeInsets.symmetric(vertical: 6),
           child: Padding(
@@ -807,8 +867,11 @@ class _StaffConsoleScreenState extends State<StaffConsoleScreen> with SingleTick
       ),
     );
   },
-    );
-  }
+    ),
+  ),
+],
+);
+}
 
   Widget _buildCatalogTab() {
     if (_catalog == null) {

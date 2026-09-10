@@ -145,6 +145,10 @@ class _InteractiveMapPickerState extends State<InteractiveMapPicker> {
   void _moveToLocation(double lat, double lng, {double? zoom}) {
     final clampedLat = lat.clamp(minLat, maxLat);
     final clampedLng = lng.clamp(minLng, maxLng);
+    setState(() {
+      _currentLat = clampedLat;
+      _currentLng = clampedLng;
+    });
     _mapController.move(
       LatLng(clampedLat, clampedLng),
       zoom ?? _mapController.camera.zoom,

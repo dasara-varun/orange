@@ -19,6 +19,10 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
   bool _isLoading = true;
   Timer? _pollingTimer;
 
+  int _rating = 5;
+  final Set<String> _feedbackTags = {};
+  bool _feedbackSubmitted = false;
+
   @override
   void initState() {
     super.initState();
@@ -312,6 +316,12 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                   ],
                 ),
               ),
+              const SizedBox(height: 20),
+            ],
+
+            // Customer Delight & Feedback Card on Delivery
+            if (currentStep >= 5) ...[
+              _buildFeedbackCard(),
               const SizedBox(height: 20),
             ],
 
@@ -612,5 +622,130 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
       default:
         return '';
     }
+  }
+
+  Widget _buildFeedbackCard() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppTheme.saffron.withValues(alpha: 0.5)),
+        boxShadow: const [
+          BoxShadow(color: Colors.black12, blurRadius: 6, offset: Offset(0, 2)),
+        ],
+      ),
+      child: _feedbackSubmitted
+          ? Row(
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFE8F5E9),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Center(
+                    child: Icon(Icons.star, color: Color(0xFF2E7D32), size: 24),
+                  ),
+                ),
+                const SizedBox(width: 14),
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Thank you for your rating!',
+                        style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14, color: AppTheme.cocoa),
+                      ),
+                      SizedBox(height: 2),
+                      Text(
+                        'Your feedback helps our Kanuru dairy team maintain fresh counter quality.',
+                        style: TextStyle(fontSize: 12, color: AppTheme.muted),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            )
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Row(
+                  children: [
+                    Text('🌟', style: TextStyle(fontSize: 18)),
+                    SizedBox(width: 8),
+                    Text(
+                      'Rate Your Fresh Dairy Experience',
+                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: AppTheme.cocoa),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                const Text(
+                  'How was your beverage delivery from our Kanuru counter?',
+                  style: TextStyle(fontSize: 12, color: AppTheme.muted),
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: List.generate(5, (index) {
+                    final starIndex = index + 1;
+                    return IconButton(
+                      icon: Icon(
+                        starIndex <= _rating ? Icons.star_rounded : Icons.star_outline_rounded,
+                        color: starIndex <= _rating ? Colors.amber[700] : Colors.grey[400],
+                        size: 32,
+                      ),
+                      onPressed: () => setState(() => _rating = starIndex),
+                    );
+                  }),
+                ),
+                const SizedBox(height: 10),
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: [
+                    '100% Pure Milk',
+                    'Super Chilled',
+                    'Quick Delivery',
+                    'Great Taste',
+                    'Neat Packaging',
+                  ].map((tag) {
+                    final isSel = _feedbackTags.contains(tag);
+                    return FilterChip(
+                      selected: isSel,
+                      label: Text(tag, style: const TextStyle(fontSize: 11, color: AppTheme.cocoa)),
+                      selectedColor: AppTheme.cream,
+                      backgroundColor: Colors.grey[100],
+                      checkmarkColor: AppTheme.saffronDark,
+                      onSelected: (selected) {
+                        setState(() {
+                          if (selected) {
+                            _feedbackTags.add(tag);
+                          } else {
+                            _feedbackTags.remove(tag);
+                          }
+                        });
+                      },
+                    );
+                  }).toList(),
+                ),
+                const SizedBox(height: 14),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      setState(() => _feedbackSubmitted = true);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Thank you! Your feedback has been recorded.')),
+                      );
+                    },
+                    child: const Text('Submit Rating'),
+                  ),
+                ),
+              ],
+            ),
+    );
   }
 }
