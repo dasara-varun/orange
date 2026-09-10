@@ -6,32 +6,36 @@ class CategoryRail extends StatelessWidget {
   final List<Category> categories;
   final String selectedCategory;
   final ValueChanged<String> onSelectCategory;
+  final Map<String, int>? itemCounts;
 
   const CategoryRail({
     super.key,
     required this.categories,
     required this.selectedCategory,
     required this.onSelectCategory,
+    this.itemCounts,
   });
 
   Color _getCategoryColor(String slug) {
     switch (slug) {
-      case 'falooda':
-        return AppTheme.rose;
-      case 'our-specials':
-        return AppTheme.saffronDark;
-      case 'thick-shakes':
-        return const Color(0xFF6D4C41);
       case 'butter-milk':
         return AppTheme.mint;
-      case 'milk-shakes':
-        return const Color(0xFF8D6E63);
-      case 'soda':
-        return const Color(0xFF26A69A);
       case 'lassi':
         return const Color(0xFFFFB300);
       case 'mocktails':
         return const Color(0xFFE91E63);
+      case 'falooda':
+        return AppTheme.rose;
+      case 'soda':
+        return const Color(0xFF00897B);
+      case 'shakes':
+        return const Color(0xFF6D4C41);
+      case 'ice-cream':
+        return const Color(0xFF7E57C2);
+      case 'our-specials':
+        return AppTheme.saffronDark;
+      case 'kulfi':
+        return const Color(0xFFF57C00);
       default:
         return AppTheme.cocoa;
     }
@@ -55,6 +59,7 @@ class CategoryRail extends StatelessWidget {
         itemBuilder: (context, index) {
           if (index == 0) {
             final isSelected = selectedCategory == 'all';
+
             return ChoiceChip(
               avatar: ClipRRect(
                 borderRadius: BorderRadius.circular(6),

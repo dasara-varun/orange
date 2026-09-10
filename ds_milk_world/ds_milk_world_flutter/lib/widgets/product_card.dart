@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:ds_milk_world_client/ds_milk_world_client.dart';
 import '../theme/app_theme.dart';
 import '../state/cart_state.dart';
-import 'customization_sheet.dart';
 
 class ProductCard extends StatefulWidget {
   final Product? product;
@@ -323,22 +322,6 @@ class _ProductCardState extends State<ProductCard> {
                               ),
                             ),
                           ],
-                        ),
-                      ),
-
-                    if (activeProduct.customisable && activeProduct.availability)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 6),
-                        child: InkWell(
-                          onTap: () => CustomizationSheet.show(context, activeProduct),
-                          child: const Text(
-                            'customise',
-                            style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w600,
-                              color: AppTheme.saffronDark,
-                            ),
-                          ),
                         ),
                       ),
                   ],

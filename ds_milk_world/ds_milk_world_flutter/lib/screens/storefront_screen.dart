@@ -65,6 +65,15 @@ class _StorefrontScreenState extends State<StorefrontScreen> {
     return groups.values.toList();
   }
 
+  Map<String, int> _getCategoryItemCounts() {
+    if (_catalog == null) return {};
+    final Map<String, Set<String>> categoryItemNames = {};
+    for (final p in _catalog!.products) {
+      categoryItemNames.putIfAbsent(p.categoryName, () => <String>{}).add(p.name);
+    }
+    return categoryItemNames.map((key, val) => MapEntry(key, val.length));
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_isStaffMode) {
@@ -74,6 +83,7 @@ class _StorefrontScreenState extends State<StorefrontScreen> {
     }
 
     final groupedProducts = _getGroupedProducts();
+    final categoryCounts = _getCategoryItemCounts();
 
     return Scaffold(
       backgroundColor: AppTheme.milk,
@@ -99,6 +109,7 @@ class _StorefrontScreenState extends State<StorefrontScreen> {
                     categories: _catalog!.categories,
                     selectedCategory: _selectedCategory,
                     onSelectCategory: (cat) => setState(() => _selectedCategory = cat),
+                    itemCounts: categoryCounts,
                   ),
                 // Product List / Grid
                 Expanded(

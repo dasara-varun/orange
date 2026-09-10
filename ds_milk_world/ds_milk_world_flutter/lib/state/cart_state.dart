@@ -92,8 +92,16 @@ class CartState extends ChangeNotifier {
     notifyListeners();
   }
 
+  String _instructions = '';
+  String get instructions => _instructions;
+  void setInstructions(String val) {
+    _instructions = val;
+    notifyListeners();
+  }
+
   void clearCart() {
     _items.clear();
+    _instructions = '';
     notifyListeners();
   }
 }

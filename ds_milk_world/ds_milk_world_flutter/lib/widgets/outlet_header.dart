@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 
-class OutletHeader extends StatelessWidget {
+class OutletHeader extends StatefulWidget {
   final ValueChanged<String>? onSearchChanged;
   final VoidCallback? onToggleStaffMode;
   final VoidCallback? onOpenHistory;
@@ -14,6 +14,19 @@ class OutletHeader extends StatelessWidget {
     this.onOpenHistory,
     this.isStaffMode = false,
   });
+
+  @override
+  State<OutletHeader> createState() => _OutletHeaderState();
+}
+
+class _OutletHeaderState extends State<OutletHeader> {
+  final TextEditingController _searchController = TextEditingController();
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -97,6 +110,23 @@ class OutletHeader extends StatelessWidget {
                                   overflow: TextOverflow.ellipsis,
                                 ),
                               ),
+                              const SizedBox(width: 6),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                                decoration: BoxDecoration(
+                                  color: AppTheme.cream,
+                                  borderRadius: BorderRadius.circular(4),
+                                  border: Border.all(color: AppTheme.saffron.withValues(alpha: 0.5), width: 0.8),
+                                ),
+                                child: const Text(
+                                  '⚡ 20-30m',
+                                  style: TextStyle(
+                                    fontSize: 9.5,
+                                    fontWeight: FontWeight.w800,
+                                    color: AppTheme.cocoa,
+                                  ),
+                                ),
+                              ),
                             ],
                           ),
                         ],
@@ -109,35 +139,42 @@ class OutletHeader extends StatelessWidget {
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  if (!isStaffMode && onOpenHistory != null)
+                  if (!widget.isStaffMode && widget.onOpenHistory != null)
                     IconButton(
                       icon: const Icon(Icons.receipt_long_outlined, size: 20, color: AppTheme.cocoa),
                       tooltip: 'My Past Orders',
                       padding: const EdgeInsets.all(6),
                       constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-                      onPressed: onOpenHistory,
+                      onPressed: widget.onOpenHistory,
                     ),
                   OutlinedButton(
-                    onPressed: onToggleStaffMode,
+                    onPressed: widget.onToggleStaffMode,
                     style: OutlinedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                       minimumSize: Size.zero,
                       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      side: const BorderSide(color: AppTheme.border),
-                      backgroundColor: isStaffMode ? AppTheme.cream : Colors.white,
+                      side: BorderSide(
+                        color: widget.isStaffMode ? AppTheme.saffronDark : AppTheme.border,
+                        width: 1,
+                      ),
+                      backgroundColor: widget.isStaffMode ? AppTheme.cream : Colors.white,
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Icon(
-                          isStaffMode ? Icons.storefront : Icons.admin_panel_settings,
-                          size: 14,
-                          color: AppTheme.cocoa,
+                          widget.isStaffMode ? Icons.check_circle : Icons.admin_panel_settings_outlined,
+                          size: 13,
+                          color: widget.isStaffMode ? AppTheme.saffronDark : AppTheme.cocoa,
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          isStaffMode ? 'Store' : 'Staff',
-                          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppTheme.cocoa),
+                          widget.isStaffMode ? 'Staff: ON' : 'Staff',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: widget.isStaffMode ? AppTheme.saffronDark : AppTheme.cocoa,
+                          ),
                         ),
                       ],
                     ),
@@ -243,10 +280,24 @@ class OutletHeader extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           TextField(
-            onChanged: onSearchChanged,
+            controller: _searchController,
+            onChanged: (val) {
+              setState(() {});
+              widget.onSearchChanged?.call(val);
+            },
             decoration: InputDecoration(
-              hintText: 'Search 79 fresh faloodas, shakes, buttermilk, specials...',
+              hintText: 'Search 147 fresh faloodas, shakes, buttermilk, kulfis...',
               prefixIcon: const Icon(Icons.search, color: AppTheme.muted, size: 20),
+              suffixIcon: _searchController.text.isNotEmpty
+                  ? IconButton(
+                      icon: const Icon(Icons.clear, size: 18, color: AppTheme.muted),
+                      onPressed: () {
+                        _searchController.clear();
+                        setState(() {});
+                        widget.onSearchChanged?.call('');
+                      },
+                    )
+                  : null,
               isDense: true,
               contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
               fillColor: Colors.white,

@@ -22,18 +22,10 @@ class CustomizationSheet extends StatefulWidget {
 }
 
 class _CustomizationSheetState extends State<CustomizationSheet> {
-  String _sweetness = 'Regular';
-  String _topping = 'None';
-  int _extraPaise = 0;
+  String _sweetness = 'Regular Sweet';
   final TextEditingController _noteController = TextEditingController();
 
   final List<String> _sweetnessOptions = ['Regular Sweet', 'Less Sweet', 'No Added Sugar'];
-  final Map<String, int> _toppingOptions = {
-    'None': 0,
-    'Extra Dry Fruits & Nuts (+₹20)': 2000,
-    'Tutti Frutti Mix (+₹10)': 1000,
-    'Extra Vanilla Scoop (+₹30)': 3000,
-  };
 
   @override
   void dispose() {
@@ -44,7 +36,6 @@ class _CustomizationSheetState extends State<CustomizationSheet> {
   @override
   Widget build(BuildContext context) {
     final basePrice = widget.product.offerPricePaise ?? widget.product.pricePaise;
-    final totalPrice = basePrice + _extraPaise;
 
     return Container(
       decoration: const BoxDecoration(
@@ -95,7 +86,7 @@ class _CustomizationSheetState extends State<CustomizationSheet> {
           ),
           const Divider(color: AppTheme.border, height: 24),
           const Text(
-            'Sweetness Level',
+            'Sweetness Preference',
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w700,
@@ -125,48 +116,11 @@ class _CustomizationSheetState extends State<CustomizationSheet> {
             }).toList(),
           ),
           const SizedBox(height: 16),
-          const Text(
-            'Add-ons & Toppings',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w700,
-              color: AppTheme.cocoa,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Column(
-            children: _toppingOptions.entries.map((entry) {
-              return RadioListTile<String>(
-                contentPadding: EdgeInsets.zero,
-                dense: true,
-                title: Text(
-                  entry.key,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    color: AppTheme.cocoa,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                value: entry.key,
-                groupValue: _topping,
-                activeColor: AppTheme.saffronDark,
-                onChanged: (val) {
-                  if (val != null) {
-                    setState(() {
-                      _topping = val;
-                      _extraPaise = entry.value;
-                    });
-                  }
-                },
-              );
-            }).toList(),
-          ),
-          const SizedBox(height: 12),
           TextField(
             controller: _noteController,
             decoration: const InputDecoration(
               labelText: 'Special instructions for kitchen',
-              hintText: 'e.g., extra chilled, no nuts...',
+              hintText: 'e.g., extra chilled, no ice...',
               isDense: true,
             ),
           ),
@@ -176,7 +130,7 @@ class _CustomizationSheetState extends State<CustomizationSheet> {
             child: ElevatedButton(
               onPressed: () {
                 final note = _noteController.text.trim();
-                final optionsSummary = 'Sweetness: $_sweetness | Topping: $_topping${note.isNotEmpty ? " | Note: $note" : ""}';
+                final optionsSummary = 'Sweetness: $_sweetness${note.isNotEmpty ? " | Note: $note" : ""}';
                 CartState.instance.addProduct(widget.product, options: optionsSummary);
                 Navigator.pop(context);
                 ScaffoldMessenger.of(context).showSnackBar(
@@ -188,7 +142,7 @@ class _CustomizationSheetState extends State<CustomizationSheet> {
                 );
               },
               child: Text(
-                'Add to Order • ${AppTheme.formatPaise(totalPrice)}',
+                'Add to Order • ${AppTheme.formatPaise(basePrice)}',
                 style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
               ),
             ),

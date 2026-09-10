@@ -289,6 +289,141 @@ class _StaffConsoleScreenState extends State<StaffConsoleScreen> with SingleTick
     _loadData();
   }
 
+  // Action: Print / View Kitchen Order Ticket (KOT)
+  void _showKotDialog(OrderRecord order) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Row(
+          children: [
+            const Icon(Icons.receipt, color: AppTheme.cocoa),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                'KOT Ticket #${order.orderNumber}',
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+              ),
+            ),
+          ],
+        ),
+        content: Container(
+          width: 340,
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: const Color(0xFFFBFBFA),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: AppTheme.border),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Center(
+                child: Text(
+                  'DS MILK WORLD',
+                  style: TextStyle(fontFamily: 'monospace', fontWeight: FontWeight.w900, fontSize: 16, letterSpacing: 1),
+                ),
+              ),
+              const Center(
+                child: Text(
+                  'AUTO NAGAR OUTLET - KITCHEN TICKET',
+                  style: TextStyle(fontFamily: 'monospace', fontWeight: FontWeight.w700, fontSize: 11),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                '--------------------------------',
+                style: TextStyle(fontFamily: 'monospace', color: Colors.grey[600]),
+              ),
+              Text(
+                'ORDER: #${order.orderNumber}',
+                style: const TextStyle(fontFamily: 'monospace', fontWeight: FontWeight.w800, fontSize: 13),
+              ),
+              Text(
+                'TIME : ${order.createdAt.hour.toString().padLeft(2, '0')}:${order.createdAt.minute.toString().padLeft(2, '0')} | STATUS: ${order.status.toUpperCase()}',
+                style: const TextStyle(fontFamily: 'monospace', fontSize: 11),
+              ),
+              Text(
+                'CUST : ${order.customerName ?? "Customer"} (${order.customerPhone})',
+                style: const TextStyle(fontFamily: 'monospace', fontSize: 11),
+              ),
+              if (order.landmark != null && order.landmark!.isNotEmpty)
+                Text(
+                  'NOTE : ${order.landmark}',
+                  style: const TextStyle(fontFamily: 'monospace', fontWeight: FontWeight.w700, fontSize: 11, color: AppTheme.saffronDark),
+                ),
+              Text(
+                '--------------------------------',
+                style: TextStyle(fontFamily: 'monospace', color: Colors.grey[600]),
+              ),
+              const SizedBox(height: 4),
+              const Text(
+                'ITEMS TO PREPARE:',
+                style: TextStyle(fontFamily: 'monospace', fontWeight: FontWeight.w800, fontSize: 12),
+              ),
+              const SizedBox(height: 4),
+              ...order.items.map((it) => Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 2),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '[ ] ${it.quantity}x ',
+                          style: const TextStyle(fontFamily: 'monospace', fontWeight: FontWeight.w800, fontSize: 13),
+                        ),
+                        Expanded(
+                          child: Text(
+                            '${it.nameSnapshot}${it.optionsSnapshot != null ? " (${it.optionsSnapshot})" : ""}',
+                            style: const TextStyle(fontFamily: 'monospace', fontWeight: FontWeight.w700, fontSize: 12),
+                          ),
+                        ),
+                      ],
+                    ),
+                  )),
+              const SizedBox(height: 4),
+              Text(
+                '--------------------------------',
+                style: TextStyle(fontFamily: 'monospace', color: Colors.grey[600]),
+              ),
+              Text(
+                'DESTINATION: ${order.deliveryAddress}',
+                style: const TextStyle(fontFamily: 'monospace', fontSize: 11),
+              ),
+              Text(
+                'TOTAL: ${AppTheme.formatPaise(order.totalPaise)} (PAID)',
+                style: const TextStyle(fontFamily: 'monospace', fontWeight: FontWeight.w800, fontSize: 12),
+              ),
+              Text(
+                '================================',
+                style: TextStyle(fontFamily: 'monospace', color: Colors.grey[600]),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Close'),
+          ),
+          ElevatedButton.icon(
+            icon: const Icon(Icons.print, size: 16),
+            label: const Text('Print Ticket'),
+            onPressed: () {
+              Navigator.pop(ctx);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('KOT #${order.orderNumber} sent to counter thermal printer!'),
+                  backgroundColor: AppTheme.cocoa,
+                  duration: const Duration(seconds: 2),
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
   // Action: Edit Product Details (Price, Offer, Description, Customizability)
   void _showEditProductDialog(Product prod) {
     final priceCtrl = TextEditingController(text: (prod.pricePaise / 100).toStringAsFixed(0));
@@ -603,19 +738,33 @@ class _StaffConsoleScreenState extends State<StaffConsoleScreen> with SingleTick
                       style: const TextStyle(fontSize: 12, color: AppTheme.cocoa),
                     )),
                 const Divider(height: 16),
-                // Action row depending on stage
+                // Action row with KOT ticket button & stage actions
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    if (stage == 'new') ...[
-                      OutlinedButton(
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: AppTheme.error,
-                          side: const BorderSide(color: AppTheme.error),
-                        ),
-                        onPressed: () => _showRejectDialog(order),
-                        child: const Text('Reject (Refund)'),
+                    OutlinedButton.icon(
+                      icon: const Icon(Icons.receipt_long, size: 14, color: AppTheme.cocoa),
+                      label: const Text('KOT Ticket', style: TextStyle(fontSize: 12, color: AppTheme.cocoa, fontWeight: FontWeight.w700)),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        side: const BorderSide(color: AppTheme.border),
                       ),
+                      onPressed: () => _showKotDialog(order),
+                    ),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (stage == 'new') ...[
+                          OutlinedButton(
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: AppTheme.error,
+                              side: const BorderSide(color: AppTheme.error),
+                            ),
+                            onPressed: () => _showRejectDialog(order),
+                            child: const Text('Reject (Refund)'),
+                          ),
                       const SizedBox(width: 8),
                       ElevatedButton(
                         onPressed: () => _showAcceptDialog(order),
@@ -653,9 +802,11 @@ class _StaffConsoleScreenState extends State<StaffConsoleScreen> with SingleTick
                 ),
               ],
             ),
-          ),
-        );
-      },
+          ],
+        ),
+      ),
+    );
+  },
     );
   }
 

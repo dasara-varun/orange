@@ -135,11 +135,18 @@ class _AddressQuoteScreenState extends State<AddressQuoteScreen> {
 
     setState(() => _isSubmitting = true);
     try {
+      final landmarkText = _landmarkController.text.trim();
+      final specialNotes = CartState.instance.instructions.trim();
+      final combinedLandmark = [
+        if (landmarkText.isNotEmpty) landmarkText,
+        if (specialNotes.isNotEmpty) 'Note: $specialNotes',
+      ].join(' | ');
+
       final order = await ApiService.instance.createOrder(
         customerPhone: '+91 ${_phoneController.text.trim()}',
         customerName: _nameController.text.trim().isEmpty ? null : _nameController.text.trim(),
         deliveryAddress: _addressController.text.trim(),
-        landmark: _landmarkController.text.trim().isEmpty ? null : _landmarkController.text.trim(),
+        landmark: combinedLandmark.isEmpty ? null : combinedLandmark,
         latitude: _selectedLat,
         longitude: _selectedLng,
         items: CartState.instance.items,

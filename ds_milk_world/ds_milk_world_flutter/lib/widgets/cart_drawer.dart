@@ -113,8 +113,27 @@ class FloatingCartBar extends StatelessWidget {
   }
 }
 
-class CartReviewSheet extends StatelessWidget {
+class CartReviewSheet extends StatefulWidget {
   const CartReviewSheet({super.key});
+
+  @override
+  State<CartReviewSheet> createState() => _CartReviewSheetState();
+}
+
+class _CartReviewSheetState extends State<CartReviewSheet> {
+  late TextEditingController _noteController;
+
+  @override
+  void initState() {
+    super.initState();
+    _noteController = TextEditingController(text: CartState.instance.instructions);
+  }
+
+  @override
+  void dispose() {
+    _noteController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -135,160 +154,236 @@ class CartReviewSheet extends StatelessWidget {
             right: 20,
             bottom: MediaQuery.of(context).viewInsets.bottom + 24,
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'Order Basket',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w800,
-                      color: AppTheme.cocoa,
-                    ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.close, color: AppTheme.cocoa),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                ],
-              ),
-              const Divider(color: AppTheme.border),
-              if (items.isEmpty)
-                const Padding(
-                  padding: EdgeInsets.all(32),
-                  child: Center(
-                    child: Text('Your basket is empty. Add some fresh dairy treats!'),
-                  ),
-                )
-              else ...[
-                ConstrainedBox(
-                  constraints: const BoxConstraints(maxHeight: 300),
-                  child: ListView.separated(
-                    shrinkWrap: true,
-                    itemCount: items.length,
-                    separatorBuilder: (_, __) => const Divider(color: AppTheme.border, height: 16),
-                    itemBuilder: (context, idx) {
-                      final item = items[idx];
-                      return Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  item.nameSnapshot,
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.w700,
-                                    fontSize: 14,
-                                    color: AppTheme.cocoa,
-                                  ),
-                                ),
-                                if (item.optionsSnapshot != null)
-                                  Text(
-                                    item.optionsSnapshot!,
-                                    style: const TextStyle(
-                                      fontSize: 11,
-                                      color: AppTheme.muted,
-                                    ),
-                                  ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  AppTheme.formatPaise(item.unitPricePaise),
-                                  style: const TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w600,
-                                    color: AppTheme.cocoa,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          Container(
-                            height: 32,
-                            decoration: BoxDecoration(
-                              color: AppTheme.cream,
-                              borderRadius: BorderRadius.circular(6),
-                              border: Border.all(color: AppTheme.border),
-                            ),
-                            child: Row(
-                              children: [
-                                IconButton(
-                                  icon: const Icon(Icons.remove, size: 12),
-                                  padding: EdgeInsets.zero,
-                                  constraints: const BoxConstraints(minWidth: 28),
-                                  onPressed: () => CartState.instance.removeProduct(item.productSku),
-                                ),
-                                Text(
-                                  '${item.quantity}',
-                                  style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12),
-                                ),
-                                IconButton(
-                                  icon: const Icon(Icons.add, size: 12),
-                                  padding: EdgeInsets.zero,
-                                  constraints: const BoxConstraints(minWidth: 28),
-                                  onPressed: () {
-                                    CartState.instance.incrementProduct(item.productSku);
-                                  },
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          SizedBox(
-                            width: 60,
-                            child: Text(
-                              AppTheme.formatPaise(item.subtotalPaise),
-                              textAlign: TextAlign.right,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w800,
-                                fontSize: 14,
-                                color: AppTheme.cocoa,
-                              ),
-                            ),
-                          ),
-                        ],
-                      );
-                    },
-                  ),
-                ),
-                const Divider(color: AppTheme.border, height: 24),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     const Text(
-                      'Subtotal',
-                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: AppTheme.cocoa),
+                      'Order Basket',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                        color: AppTheme.cocoa,
+                      ),
                     ),
-                    Text(
-                      AppTheme.formatPaise(subtotal),
-                      style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: AppTheme.cocoa),
+                    IconButton(
+                      icon: const Icon(Icons.close, color: AppTheme.cocoa),
+                      onPressed: () => Navigator.pop(context),
                     ),
                   ],
                 ),
-                const SizedBox(height: 16),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.pop(context); // close cart sheet
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const AddressQuoteScreen()),
-                      );
-                    },
-                    child: const Text(
-                      'Enter Delivery Address & Check Radius →',
-                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+                const Divider(color: AppTheme.border),
+                if (items.isEmpty)
+                  const Padding(
+                    padding: EdgeInsets.all(32),
+                    child: Center(
+                      child: Text('Your basket is empty. Add some fresh dairy treats!'),
+                    ),
+                  )
+                else ...[
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxHeight: 240),
+                    child: ListView.separated(
+                      shrinkWrap: true,
+                      itemCount: items.length,
+                      separatorBuilder: (_, __) => const Divider(color: AppTheme.border, height: 16),
+                      itemBuilder: (context, idx) {
+                        final item = items[idx];
+                        return Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    item.nameSnapshot,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 14,
+                                      color: AppTheme.cocoa,
+                                    ),
+                                  ),
+                                  if (item.optionsSnapshot != null)
+                                    Text(
+                                      item.optionsSnapshot!,
+                                      style: const TextStyle(
+                                        fontSize: 11,
+                                        color: AppTheme.muted,
+                                      ),
+                                    ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    AppTheme.formatPaise(item.unitPricePaise),
+                                    style: const TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                      color: AppTheme.cocoa,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Container(
+                              height: 32,
+                              decoration: BoxDecoration(
+                                color: AppTheme.cream,
+                                borderRadius: BorderRadius.circular(6),
+                                border: Border.all(color: AppTheme.border),
+                              ),
+                              child: Row(
+                                children: [
+                                  IconButton(
+                                    icon: const Icon(Icons.remove, size: 12),
+                                    padding: EdgeInsets.zero,
+                                    constraints: const BoxConstraints(minWidth: 28),
+                                    onPressed: () => CartState.instance.removeProduct(item.productSku),
+                                  ),
+                                  Text(
+                                    '${item.quantity}',
+                                    style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12),
+                                  ),
+                                  IconButton(
+                                    icon: const Icon(Icons.add, size: 12),
+                                    padding: EdgeInsets.zero,
+                                    constraints: const BoxConstraints(minWidth: 28),
+                                    onPressed: () {
+                                      CartState.instance.incrementProduct(item.productSku);
+                                    },
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            SizedBox(
+                              width: 60,
+                              child: Text(
+                                AppTheme.formatPaise(item.subtotalPaise),
+                                textAlign: TextAlign.right,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 14,
+                                  color: AppTheme.cocoa,
+                                ),
+                              ),
+                            ),
+                          ],
+                        );
+                      },
                     ),
                   ),
-                ),
+                  const Divider(color: AppTheme.border, height: 20),
+
+                  // Special instructions card
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: AppTheme.border),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Row(
+                          children: [
+                            Icon(Icons.edit_note, size: 16, color: AppTheme.cocoa),
+                            SizedBox(width: 6),
+                            Text(
+                              'Notes for counter / kitchen',
+                              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppTheme.cocoa),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        TextField(
+                          controller: _noteController,
+                          onChanged: (val) => CartState.instance.setInstructions(val),
+                          decoration: const InputDecoration(
+                            hintText: 'e.g., less sweet, extra chilled, ring bell...',
+                            isDense: true,
+                            contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Wrap(
+                          spacing: 6,
+                          runSpacing: 4,
+                          children: [
+                            'Less Sweet',
+                            'Extra Chilled',
+                            'Leave at Gate',
+                            'Call on Arrival',
+                          ].map((chip) {
+                            return InkWell(
+                              onTap: () {
+                                final current = _noteController.text.trim();
+                                if (current.isEmpty) {
+                                  _noteController.text = chip;
+                                } else if (!current.contains(chip)) {
+                                  _noteController.text = '$current, $chip';
+                                }
+                                CartState.instance.setInstructions(_noteController.text);
+                                setState(() {});
+                              },
+                              borderRadius: BorderRadius.circular(12),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                decoration: BoxDecoration(
+                                  color: AppTheme.cream,
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(color: AppTheme.saffron.withValues(alpha: 0.5)),
+                                ),
+                                child: Text(
+                                  '+ $chip',
+                                  style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: AppTheme.cocoa),
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 14),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Subtotal',
+                        style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: AppTheme.cocoa),
+                      ),
+                      Text(
+                        AppTheme.formatPaise(subtotal),
+                        style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: AppTheme.cocoa),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.pop(context); // close cart sheet
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const AddressQuoteScreen()),
+                        );
+                      },
+                      child: const Text(
+                        'Enter Delivery Address & Check Radius →',
+                        style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+                      ),
+                    ),
+                  ),
+                ],
               ],
-            ],
+            ),
           ),
         );
       },
