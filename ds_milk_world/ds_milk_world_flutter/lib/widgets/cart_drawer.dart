@@ -17,100 +17,106 @@ class FloatingCartBar extends StatelessWidget {
         final subtotal = CartState.instance.subtotalPaise;
 
         return SafeArea(
-          child: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 860),
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  decoration: BoxDecoration(
-                    color: AppTheme.cocoa,
-                    borderRadius: BorderRadius.circular(14),
-                    boxShadow: const [
-                      BoxShadow(
-                        color: Color(0x333A241B),
-                        blurRadius: 16,
-                        offset: Offset(0, 6),
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: AppTheme.saffron,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          '$totalItems ${totalItems == 1 ? "item" : "items"}',
-                          style: const TextStyle(
-                            color: AppTheme.cocoa,
-                            fontWeight: FontWeight.w800,
-                            fontSize: 12,
+          top: false,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 860),
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      decoration: BoxDecoration(
+                        color: AppTheme.cocoa,
+                        borderRadius: BorderRadius.circular(14),
+                        boxShadow: const [
+                          BoxShadow(
+                            color: Color(0x333A241B),
+                            blurRadius: 16,
+                            offset: Offset(0, 6),
                           ),
-                        ),
+                        ],
                       ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              AppTheme.formatPaise(subtotal),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: AppTheme.saffron,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              '$totalItems ${totalItems == 1 ? "item" : "items"}',
                               style: const TextStyle(
-                                color: AppTheme.milk,
+                                color: AppTheme.cocoa,
                                 fontWeight: FontWeight.w800,
-                                fontSize: 16,
+                                fontSize: 12,
                               ),
                             ),
-                            const Text(
-                              'Plus delivery fee at next step',
-                              style: TextStyle(
-                                color: AppTheme.cream,
-                                fontSize: 11,
-                                fontWeight: FontWeight.w500,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  AppTheme.formatPaise(subtotal),
+                                  style: const TextStyle(
+                                    color: AppTheme.milk,
+                                    fontWeight: FontWeight.w800,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                                const Text(
+                                  'Plus delivery fee at next step',
+                                  style: TextStyle(
+                                    color: AppTheme.cream,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      ElevatedButton(
-                        onPressed: () {
-                          showModalBottomSheet(
-                            context: context,
-                            isScrollControlled: true,
-                            backgroundColor: Colors.transparent,
-                            builder: (_) => const CartReviewSheet(),
-                          );
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppTheme.saffron,
-                          foregroundColor: AppTheme.cocoa,
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                        ),
-                        child: const Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              'View Cart',
-                              style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
+                          ),
+                          const SizedBox(width: 8),
+                          ElevatedButton(
+                            onPressed: () {
+                              showModalBottomSheet(
+                                context: context,
+                                isScrollControlled: true,
+                                backgroundColor: Colors.transparent,
+                                builder: (_) => const CartReviewSheet(),
+                              );
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppTheme.saffron,
+                              foregroundColor: AppTheme.cocoa,
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                             ),
-                            SizedBox(width: 4),
-                            Icon(Icons.arrow_forward, size: 14),
-                          ],
-                        ),
+                            child: const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  'View Cart',
+                                  style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
+                                ),
+                                SizedBox(width: 4),
+                                Icon(Icons.arrow_forward, size: 14),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
-                    ],
+                    ),
                   ),
                 ),
               ),
-            ),
+            ],
           ),
         );
       },

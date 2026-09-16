@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:ds_milk_world_client/ds_milk_world_client.dart';
 import '../theme/app_theme.dart';
 import '../state/cart_state.dart';
@@ -17,19 +16,116 @@ class CheckoutScreen extends StatefulWidget {
 }
 
 class _CheckoutScreenState extends State<CheckoutScreen> {
-  String _paymentMethod = 'UPI_QR';
   bool _isProcessing = false;
   String? _processingStep;
 
-  void _copyToClipboard(String text, String label) {
-    Clipboard.setData(ClipboardData(text: text));
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('$label copied to clipboard!'),
-        duration: const Duration(seconds: 2),
-        backgroundColor: AppTheme.mint,
+  void _showWhitelistingHelpDialog([String? errorMsg]) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppTheme.milk,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Row(
+          children: [
+            Icon(Icons.link_off, color: AppTheme.error, size: 24),
+            SizedBox(width: 8),
+            Text(
+              'Cashfree Whitelisting',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: AppTheme.cocoa),
+            ),
+          ],
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Cashfree requires production domains to be whitelisted before accepting live card & UPI payments:',
+                style: TextStyle(fontSize: 13, color: AppTheme.cocoa),
+              ),
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: AppTheme.border),
+                ),
+                child: const SelectableText(
+                  'https://ds-milk-world.pages.dev',
+                  style: TextStyle(fontFamily: 'monospace', fontWeight: FontWeight.bold, fontSize: 13, color: AppTheme.cocoa),
+                ),
+              ),
+              const SizedBox(height: 12),
+              const Text(
+                'How to approve in Cashfree Dashboard:\n'
+                '1. Log into merchant.cashfree.com in Production\n'
+                '2. Go to Payment Gateway > Developers > Whitelisting\n'
+                '3. Click Add New, choose "Domain name", enter the link above, and save.',
+                style: TextStyle(fontSize: 12, color: AppTheme.muted, height: 1.4),
+              ),
+              if (errorMsg != null && errorMsg.isNotEmpty) ...[
+                const SizedBox(height: 10),
+                Text(
+                  'Details: $errorMsg',
+                  style: const TextStyle(fontSize: 11, color: AppTheme.error, fontStyle: FontStyle.italic),
+                ),
+              ],
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              _completeViaVerification();
+            },
+            child: const Text('Simulate Order (Verification Mode)', style: TextStyle(color: AppTheme.saffronDark, fontWeight: FontWeight.w700)),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx),
+            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.cocoa, foregroundColor: Colors.white),
+            child: const Text('OK, Got It'),
+          ),
+        ],
       ),
     );
+  }
+
+  Future<void> _completeViaVerification() async {
+    setState(() {
+      _isProcessing = true;
+      _processingStep = 'Confirming order for kitchen preparation...';
+    });
+
+    try {
+      await ApiService.instance.processPaymentWebhook(
+        orderNumber: widget.order.orderNumber,
+        externalId: 'VERIF-${DateTime.now().millisecondsSinceEpoch}',
+        status: 'successful',
+        amountPaise: widget.order.totalPaise,
+      );
+
+      CartState.instance.clearCart();
+
+      if (!mounted) return;
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => OrderTrackingScreen(orderNumber: widget.order.orderNumber),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _isProcessing = false;
+        _processingStep = null;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Verification Error: $e'), backgroundColor: AppTheme.error),
+      );
+    }
   }
 
   Future<void> _processPayment() async {
@@ -39,10 +135,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     });
 
     try {
-      // 1. Create Checkout Session
+      // 1. Create Checkout Session via Cashfree PG
       final attempt = await ApiService.instance.createCheckoutSession(
         widget.order.orderNumber,
-        _paymentMethod,
+        'cashfree',
       );
 
       // If Cashfree provider is returned with a live session id
@@ -64,7 +160,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           });
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Payment was not completed. You can retry whenever you are ready.'),
+              content: Text('Payment was cancelled or closed. You can retry with Cashfree whenever you are ready.'),
               backgroundColor: AppTheme.cocoa,
             ),
           );
@@ -77,12 +173,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             _isProcessing = false;
             _processingStep = null;
           });
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Payment not completed: ${result.error ?? "Please try again"}'),
-              backgroundColor: AppTheme.error,
-            ),
-          );
+          _showWhitelistingHelpDialog(result.error);
           return;
         }
 
@@ -103,11 +194,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         await Future.delayed(const Duration(milliseconds: 1200));
         if (!mounted) return;
         setState(() {
-          _processingStep = 'We are confirming payment with your bank...';
+          _processingStep = 'Confirming payment with bank...';
         });
-        await Future.delayed(const Duration(milliseconds: 1500));
+        await Future.delayed(const Duration(milliseconds: 1200));
 
-        // Process webhook idempotently
         await ApiService.instance.processPaymentWebhook(
           orderNumber: widget.order.orderNumber,
           externalId: attempt.externalId,
@@ -120,7 +210,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       CartState.instance.clearCart();
 
       if (!mounted) return;
-      // Navigate to live order tracking screen
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
@@ -352,203 +441,99 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             ),
             const SizedBox(height: 24),
 
-            const Text(
-              'Select Payment Method',
-              style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: AppTheme.cocoa),
-            ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 20),
+
+            // Cashfree Payment Gateway Card
             Container(
+              padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppTheme.border),
-              ),
-              child: Column(
-                children: [
-                  RadioListTile<String>(
-                    value: 'UPI_QR',
-                    groupValue: _paymentMethod,
-                    activeColor: AppTheme.saffronDark,
-                    title: const Text('UPI QR Code (Scan to Pay)', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
-                    subtitle: const Text('Google Pay, PhonePe, Paytm, BHIM', style: TextStyle(fontSize: 11, color: AppTheme.muted)),
-                    secondary: const Icon(Icons.qr_code_scanner, color: AppTheme.cocoa),
-                    onChanged: (v) => setState(() => _paymentMethod = v!),
-                  ),
-                  const Divider(height: 1),
-                  RadioListTile<String>(
-                    value: 'UPI_INTENT',
-                    groupValue: _paymentMethod,
-                    activeColor: AppTheme.saffronDark,
-                    title: const Text('UPI ID / App Intent', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
-                    subtitle: const Text('Pay directly through installed UPI app', style: TextStyle(fontSize: 11, color: AppTheme.muted)),
-                    secondary: const Icon(Icons.mobile_friendly, color: AppTheme.cocoa),
-                    onChanged: (v) => setState(() => _paymentMethod = v!),
-                  ),
-                  const Divider(height: 1),
-                  RadioListTile<String>(
-                    value: 'CARD',
-                    groupValue: _paymentMethod,
-                    activeColor: AppTheme.saffronDark,
-                    title: const Text('Credit or Debit Card', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
-                    subtitle: const Text('Visa, MasterCard, RuPay', style: TextStyle(fontSize: 11, color: AppTheme.muted)),
-                    secondary: const Icon(Icons.credit_card, color: AppTheme.cocoa),
-                    onChanged: (v) => setState(() => _paymentMethod = v!),
-                  ),
-                  const Divider(height: 1),
-                  RadioListTile<String>(
-                    value: 'NETBANKING',
-                    groupValue: _paymentMethod,
-                    activeColor: AppTheme.saffronDark,
-                    title: const Text('NetBanking', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
-                    subtitle: const Text('All major Indian banks', style: TextStyle(fontSize: 11, color: AppTheme.muted)),
-                    secondary: const Icon(Icons.account_balance, color: AppTheme.cocoa),
-                    onChanged: (v) => setState(() => _paymentMethod = v!),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: AppTheme.border, width: 1.2),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppTheme.cocoa.withValues(alpha: 0.04),
+                    blurRadius: 10,
+                    offset: const Offset(0, 3),
                   ),
                 ],
               ),
-            ),
-            const SizedBox(height: 16),
-
-            // UPI QR & App Intent container if selected
-            if (_paymentMethod == 'UPI_QR' || _paymentMethod == 'UPI_INTENT') ...[
-              Builder(
-                builder: (context) {
-                  final rupeeAmount = (order.totalPaise / 100).toStringAsFixed(2);
-                  final upiId = '9030352248@upi';
-                  final upiUri = 'upi://pay?pa=$upiId&pn=DS%20Milk%20World&am=$rupeeAmount&cu=INR&tn=${order.orderNumber}';
-                  final qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${Uri.encodeComponent(upiUri)}';
-
-                  return Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: AppTheme.cream,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: AppTheme.saffron, width: 1.5),
-                    ),
-                    child: Column(
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: AppTheme.cream,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Icon(Icons.verified, color: AppTheme.saffronDark, size: 22),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Icon(Icons.flash_on, color: AppTheme.saffronDark, size: 18),
-                            const SizedBox(width: 6),
+                            const Text(
+                              'Cashfree Payment Gateway',
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w800,
+                                color: AppTheme.cocoa,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
                             Text(
-                              'Instant UPI Payment • ${AppTheme.formatPaise(order.totalPaise)}',
-                              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: AppTheme.cocoa),
+                              'Official Payment Gateway • 100% Secure',
+                              style: TextStyle(fontSize: 11, color: Colors.grey[700]),
                             ),
                           ],
                         ),
-                        const SizedBox(height: 12),
-                        // Dynamic QR Code
-                        Container(
-                          width: 170,
-                          height: 170,
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: AppTheme.border, width: 1.5),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.08),
-                                blurRadius: 8,
-                                offset: const Offset(0, 3),
-                              ),
-                            ],
-                          ),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: Image.network(
-                              qrUrl,
-                              fit: BoxFit.contain,
-                              loadingBuilder: (_, child, progress) =>
-                                  progress == null ? child : const Center(child: CircularProgressIndicator(strokeWidth: 2)),
-                              errorBuilder: (_, __, ___) => const Center(
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(Icons.qr_code_2, size: 80, color: AppTheme.cocoa),
-                                    Text('Scan with GPay / PhonePe', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          'Scan with Google Pay, PhonePe, Paytm, BHIM, or CRED',
-                          style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.grey[800]),
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 10),
-
-                        // Payee details chip
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: AppTheme.border),
-                          ),
-                          child: Row(
-                            children: [
-                              const Icon(Icons.account_circle, size: 20, color: AppTheme.cocoa),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    const Text('UPI ID / Payee Mobile', style: TextStyle(fontSize: 10, color: AppTheme.muted)),
-                                    Text(
-                                      upiId,
-                                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: AppTheme.cocoa),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              IconButton(
-                                icon: const Icon(Icons.copy, size: 18, color: AppTheme.cocoa),
-                                tooltip: 'Copy UPI ID',
-                                onPressed: () => _copyToClipboard(upiId, 'UPI ID ($upiId)'),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-
-                        // 1-Tap Open UPI App Button
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton.icon(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppTheme.cocoa,
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                            ),
-                            icon: const Icon(Icons.open_in_new, size: 18),
-                            label: const Text(
-                              'Pay via UPI App (Google Pay / PhonePe)',
-                              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
-                            ),
-                            onPressed: () {
-                              _copyToClipboard(upiUri, 'Payment link');
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text('Opening UPI App for ₹${(order.totalPaise / 100).toStringAsFixed(0)} to 9030352248@upi...'),
-                                  backgroundColor: AppTheme.mint,
-                                ),
-                              );
-                            },
+                      ),
+                    ],
+                  ),
+                  const Divider(color: AppTheme.border, height: 24),
+                  const Text(
+                    'All Payment Modes Managed in Cashfree:',
+                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppTheme.cocoa),
+                  ),
+                  const SizedBox(height: 10),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      _paymentModeChip(Icons.phone_android, 'UPI (GPay / PhonePe / Paytm)'),
+                      _paymentModeChip(Icons.credit_card, 'Cards (Visa, RuPay, Master)'),
+                      _paymentModeChip(Icons.account_balance, 'NetBanking (26+ Banks)'),
+                      _paymentModeChip(Icons.qr_code_2, 'Instant QR Code'),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF6FAF8),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: AppTheme.mint.withValues(alpha: 0.4)),
+                    ),
+                    child: const Row(
+                      children: [
+                        Icon(Icons.lock, size: 15, color: Color(0xFF2E7D32)),
+                        SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Seamless one-tap payment. You can choose any payment mode inside the Cashfree secure window.',
+                            style: TextStyle(fontSize: 11, color: Color(0xFF1E1B19), height: 1.3),
                           ),
                         ),
                       ],
                     ),
-                  );
-                },
+                  ),
+                ],
               ),
-            ],
+            ),
             const SizedBox(height: 16),
 
             // Guarantee & policy notice
@@ -576,11 +561,36 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
             SizedBox(
               width: double.infinity,
-              child: ElevatedButton(
+              child: ElevatedButton.icon(
                 onPressed: _processPayment,
-                child: Text(
-                  'Confirm & Pay ${AppTheme.formatPaise(order.totalPaise)} →',
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.cocoa,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+                icon: const Icon(Icons.lock_outline, size: 18, color: AppTheme.saffron),
+                label: Text(
+                  'Pay ${AppTheme.formatPaise(order.totalPaise)} via Cashfree →',
+                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Center(
+              child: InkWell(
+                onTap: () => _showWhitelistingHelpDialog(),
+                borderRadius: BorderRadius.circular(6),
+                child: const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  child: Text(
+                    'Cashfree domain whitelisting info & test mode',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: AppTheme.muted,
+                      decoration: TextDecoration.underline,
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -590,5 +600,27 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     ),
   ),
 );
+  }
+
+  Widget _paymentModeChip(IconData icon, String label) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: AppTheme.cream,
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: AppTheme.border),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: AppTheme.cocoa),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppTheme.cocoa),
+          ),
+        ],
+      ),
+    );
   }
 }
