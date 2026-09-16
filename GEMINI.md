@@ -17,14 +17,6 @@ For version-specific docs, use `/org/project/version` from the `library` output 
 If a command fails with a quota error, inform the user and suggest `npx ctx7@latest login` or setting `CONTEXT7_API_KEY` env var for higher limits. Do not silently fall back to training data.
 <!-- context7 -->
 
-<!-- speckit -->
-## Spec Kit (Spec-Driven Development)
-All architectural features, API extensions, and multi-component tasks must follow Spec-Driven Development:
-1. Adhere to `.specify/memory/constitution.md` (0ms hydration, integer paise, 5.0 km radius, PIN 1979).
-2. Generate or update specifications in `.specify/` (`spec.md`, `plan.md`, `tasks.md`).
-3. Never "vibe code" architectural or database schema changes without a verified plan.
-<!-- speckit -->
-
 <!-- impeccable -->
 ## Impeccable Design Standards
 All UI, visual, and UX code must follow `DESIGN.md` and `PRODUCT.md`:

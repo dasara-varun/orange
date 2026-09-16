@@ -1,41 +1,15 @@
 # DS Milk World — Development Environment & Agent Instructions (AGENTS.md)
 
-This file is the master operational guideline for all AI coding assistants, subagents, and contributors working in this repository. All agent turns and modifications must strictly follow the five foundational frameworks configured in this environment:
+This file is the master operational guideline for all AI coding assistants, subagents, and contributors working in this repository. All agent turns and modifications must strictly follow the four foundational frameworks configured in this environment:
 
-1. **Spec Kit**: Spec-Driven Development (`github.com/github/spec-kit`)
-2. **Context7**: Live Documentation System (`github.com/upstash/context7`)
-3. **Impeccable**: High-Craft Frontend Design System (`impeccable.style`)
-4. **Cashfree Payments**: Agent Skills & MCP Server (`cashfree.com/docs/tools-ai/cashfree-agent-skills`)
-5. **Git-GitHub Manager**: High-Cadence Micro-Commit & Immediate-Push Protocol
-
----
-
-## 🏛️ 1. Spec Kit — Spec-Driven Development (SDD) Protocol
-
-Never "vibe code" architectural changes, new endpoints, or multi-component features without an authoritative specification.
-
-### Workflow Phases
-1. **Constitution Compliance**: Check `.specify/memory/constitution.md` before making design choices.
-   - Zero-latency hydration (0ms on frame 1).
-   - Integer paise financial arithmetic (`₹1 = 100 paise`).
-   - Hard 5.0 km freshness perimeter from Kanuru Center (`16.4850° N, 80.6900° E`).
-   - Staff PIN **`1979`** security.
-2. **Specification (`spec.md`)**: Define user stories, acceptance criteria, data models, and out-of-scope boundaries.
-3. **Plan (`plan.md`)**: Detail technical architecture, dependencies, circuit breakers, and database migrations.
-4. **Tasks (`tasks.md`)**: Break implementation into small, atomic, verifiable checklist items.
-5. **Implementation**: Execute task-by-task with verification at every step (`flutter test`, `dart test`, `flutter analyze`).
-
-### Spec Kit Commands
-- `/speckit-constitution`: Review or update project principles.
-- `/speckit-specify`: Create or update feature specification.
-- `/speckit-plan`: Create architectural technical plan.
-- `/speckit-tasks`: Break plan into actionable tasks.
-- `/speckit-implement`: Step through task execution.
-- `/speckit-checklist`: Quality gates verification.
+1. **Context7**: Live Documentation System (`github.com/upstash/context7`)
+2. **Impeccable**: High-Craft Frontend Design System (`impeccable.style`)
+3. **Cashfree Payments**: Agent Skills & MCP Server (`cashfree.com/docs/tools-ai/cashfree-agent-skills`)
+4. **Git-GitHub Manager**: High-Cadence Micro-Commit & Immediate-Push Protocol
 
 ---
 
-## 📚 2. Context7 — Live Documentation & MCP Protocol
+## 📚 1. Context7 — Live Documentation & MCP Protocol
 
 Do not rely on static training data or guess API signatures for external packages and frameworks.
 
@@ -57,7 +31,7 @@ Do not rely on static training data or guess API signatures for external package
 
 ---
 
-## 🎨 3. Impeccable — Frontend Craft & Quality Floor
+## 🎨 2. Impeccable — Frontend Craft & Quality Floor
 
 All UI/UX work must respect the visual standards codified in [`DESIGN.md`](./DESIGN.md) and [`PRODUCT.md`](./PRODUCT.md).
 
@@ -89,7 +63,7 @@ All UI/UX work must respect the visual standards codified in [`DESIGN.md`](./DES
 
 ---
 
-## ⚡ 4. Git & GitHub — Micro-Commit & Immediate-Push Protocol
+## ⚡ 3. Git & GitHub — Micro-Commit & Immediate-Push Protocol
 
 1. **Micro-Commit Cadence**: Commit immediately after every notable change (widget update, bugfix, schema adjustment, passing test). Do not stockpile uncommitted changes across unrelated tasks.
 2. **Immediate Push Cadence**: Push immediately after every commit to `origin main`. This guarantees remote backup, triggers CI pipelines in real time, and eliminates divergent histories.
@@ -98,7 +72,7 @@ All UI/UX work must respect the visual standards codified in [`DESIGN.md`](./DES
 
 ---
 
-## 📋 5. Core Invariants Cheat Sheet
+## 📋 4. Core Invariants Cheat Sheet
 
 | Parameter | Value | Location |
 | :--- | :--- | :--- |
