@@ -127,10 +127,31 @@ class _AddressQuoteScreenState extends State<AddressQuoteScreen> {
         if (specialNotes.isNotEmpty) 'Note: $specialNotes',
       ].join(' | ');
 
+      final cleanPhone = _phoneController.text.replaceAll(RegExp(r'[^0-9]'), '');
+      if (cleanPhone.length != 10) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please enter a valid 10-digit mobile number (compulsory).'),
+            backgroundColor: AppTheme.error,
+          ),
+        );
+        return;
+      }
+      final validName = _nameController.text.trim();
+      if (validName.isEmpty || validName.length < 2) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please enter your full name (compulsory, min 2 characters).'),
+            backgroundColor: AppTheme.error,
+          ),
+        );
+        return;
+      }
+
       final order = await ApiService.instance.createOrder(
-        customerPhone: '+91 ${_phoneController.text.trim()}',
+        customerPhone: '+91 $cleanPhone',
         customerEmail: _emailController.text.trim(),
-        customerName: _nameController.text.trim().isEmpty ? 'Customer' : _nameController.text.trim(),
+        customerName: validName,
         deliveryAddress: _addressController.text.trim(),
         landmark: combinedLandmark.isEmpty ? null : combinedLandmark,
         latitude: _selectedLat,
@@ -229,8 +250,12 @@ class _AddressQuoteScreenState extends State<AddressQuoteScreen> {
                         hintText: '10-digit number',
                       ),
                       validator: (val) {
-                        if (val == null || val.trim().length < 10) {
-                          return 'Enter valid 10-digit mobile';
+                        final digits = val?.replaceAll(RegExp(r'[^0-9]'), '') ?? '';
+                        if (digits.length != 10) {
+                          return 'Enter valid 10-digit mobile number';
+                        }
+                        if (!RegExp(r'^[6-9]').hasMatch(digits)) {
+                          return 'Mobile must start with 6, 7, 8, or 9';
                         }
                         return null;
                       },
@@ -242,11 +267,15 @@ class _AddressQuoteScreenState extends State<AddressQuoteScreen> {
                       controller: _nameController,
                       decoration: const InputDecoration(
                         labelText: 'Full Name *',
-                        hintText: 'Your name',
+                        hintText: 'Your full name',
                       ),
                       validator: (val) {
-                        if (val == null || val.trim().isEmpty) {
-                          return 'Enter your full name';
+                        final name = val?.trim() ?? '';
+                        if (name.isEmpty) {
+                          return 'Full name is compulsory';
+                        }
+                        if (name.length < 2) {
+                          return 'Name must be at least 2 characters';
                         }
                         return null;
                       },

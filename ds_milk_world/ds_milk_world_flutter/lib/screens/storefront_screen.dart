@@ -7,7 +7,6 @@ import '../widgets/category_rail.dart';
 import '../widgets/product_card.dart';
 import '../widgets/cart_drawer.dart';
 import '../services/mock_data.dart';
-import 'outlet_login_screen.dart';
 import 'order_history_screen.dart';
 
 class StorefrontScreen extends StatefulWidget {
@@ -21,7 +20,6 @@ class _StorefrontScreenState extends State<StorefrontScreen> {
   StoreCatalog? _catalog = MockData.getCatalog();
   String _selectedCategory = 'all';
   String _searchQuery = '';
-  bool _isStaffMode = false;
 
   @override
   void initState() {
@@ -74,12 +72,6 @@ class _StorefrontScreenState extends State<StorefrontScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (_isStaffMode) {
-      return OutletLoginScreen(
-        onBackToCustomer: () => setState(() => _isStaffMode = false),
-      );
-    }
-
     final groupedProducts = _getGroupedProducts();
     final categoryCounts = _getCategoryItemCounts();
 
@@ -94,12 +86,10 @@ class _StorefrontScreenState extends State<StorefrontScreen> {
                 // Outlet Header
                 OutletHeader(
                   onSearchChanged: (val) => setState(() => _searchQuery = val),
-                  onToggleStaffMode: () => setState(() => _isStaffMode = !_isStaffMode),
                   onOpenHistory: () => Navigator.push(
                     context,
                     MaterialPageRoute(builder: (_) => const OrderHistoryScreen()),
                   ),
-                  isStaffMode: _isStaffMode,
                 ),
                 // Category Rail
                 if (_catalog != null)

@@ -3,16 +3,12 @@ import '../theme/app_theme.dart';
 
 class OutletHeader extends StatefulWidget {
   final ValueChanged<String>? onSearchChanged;
-  final VoidCallback? onToggleStaffMode;
   final VoidCallback? onOpenHistory;
-  final bool isStaffMode;
 
   const OutletHeader({
     super.key,
     this.onSearchChanged,
-    this.onToggleStaffMode,
     this.onOpenHistory,
-    this.isStaffMode = false,
   });
 
   @override
@@ -136,51 +132,14 @@ class _OutletHeaderState extends State<OutletHeader> {
                 ),
               ),
               const SizedBox(width: 4),
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (!widget.isStaffMode && widget.onOpenHistory != null)
-                    IconButton(
-                      icon: const Icon(Icons.receipt_long_outlined, size: 20, color: AppTheme.cocoa),
-                      tooltip: 'My Past Orders',
-                      padding: const EdgeInsets.all(6),
-                      constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-                      onPressed: widget.onOpenHistory,
-                    ),
-                  OutlinedButton(
-                    onPressed: widget.onToggleStaffMode,
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                      minimumSize: Size.zero,
-                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      side: BorderSide(
-                        color: widget.isStaffMode ? AppTheme.saffronDark : AppTheme.border,
-                        width: 1,
-                      ),
-                      backgroundColor: widget.isStaffMode ? AppTheme.cream : Colors.white,
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          widget.isStaffMode ? Icons.check_circle : Icons.admin_panel_settings_outlined,
-                          size: 13,
-                          color: widget.isStaffMode ? AppTheme.saffronDark : AppTheme.cocoa,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          widget.isStaffMode ? 'Staff: ON' : 'Staff',
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w700,
-                            color: widget.isStaffMode ? AppTheme.saffronDark : AppTheme.cocoa,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
+              if (widget.onOpenHistory != null)
+                IconButton(
+                  icon: const Icon(Icons.receipt_long_outlined, size: 22, color: AppTheme.cocoa),
+                  tooltip: 'My Past Orders',
+                  padding: const EdgeInsets.all(6),
+                  constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+                  onPressed: widget.onOpenHistory,
+                ),
             ],
           ),
           const SizedBox(height: 12),

@@ -118,9 +118,34 @@ void main() {
       expect(
         () => OrderService.createOrder(
           customerPhone: '+91 9876543210',
+          customerEmail: 'outofradius@example.com',
+          customerName: 'Suresh Kumar',
           deliveryAddress: 'Gannavaram Airport Area',
           latitude: farLat,
           longitude: farLng,
+          requestedItems: [
+            OrderItem(
+              productSku: 'DSMW-FAL-05',
+              nameSnapshot: 'Oreo Falooda',
+              unitPricePaise: 9000,
+              quantity: 1,
+              subtotalPaise: 9000,
+            ),
+          ],
+        ),
+        throwsArgumentError,
+      );
+    });
+
+    test('Strictly rejects orders with missing or blank customer name', () {
+      expect(
+        () => OrderService.createOrder(
+          customerPhone: '+91 9876543210',
+          customerEmail: 'valid@example.com',
+          customerName: '',
+          deliveryAddress: 'Kanuru Center',
+          latitude: GeoService.outletLat,
+          longitude: GeoService.outletLng,
           requestedItems: [
             OrderItem(
               productSku: 'DSMW-FAL-05',
@@ -341,6 +366,7 @@ void main() {
       final order2 = OrderService.createOrder(
         customerPhone: '+91 9900011224',
         customerEmail: 'pooja.work@example.com',
+        customerName: 'Pooja',
         deliveryAddress: 'Road 3, Auto Nagar',
         latitude: 16.4955,
         longitude: 80.6655,
@@ -379,6 +405,7 @@ void main() {
       final order = OrderService.createOrder(
         customerPhone: '+91 9888877777',
         customerEmail: 'rider.test@example.com',
+        customerName: 'Rider Tester',
         deliveryAddress: 'Plot 10, Auto Nagar',
         latitude: 16.4960,
         longitude: 80.6660,

@@ -50,7 +50,11 @@ class OrderService {
       throw ArgumentError('Order must contain at least one item');
     }
 
-    // Compulsory email and phone validation (Production Specification Section 6)
+    // Compulsory name, email and phone validation (Production Specification Section 6)
+    final name = (customerName ?? '').trim();
+    if (name.isEmpty || name.length < 2) {
+      throw ArgumentError('Customer full name is compulsory (minimum 2 characters)');
+    }
     final cleanPhone = customerPhone.replaceAll(RegExp(r'[\s\-\(\)]'), '');
     if (cleanPhone.length < 10) {
       throw ArgumentError('Valid 10-digit mobile phone number is required');

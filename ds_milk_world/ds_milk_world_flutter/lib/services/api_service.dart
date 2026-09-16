@@ -178,7 +178,7 @@ class ApiService {
   Future<OrderRecord> createOrder({
     required String customerPhone,
     String? customerEmail,
-    String? customerName,
+    required String customerName,
     required String deliveryAddress,
     String? landmark,
     required double latitude,

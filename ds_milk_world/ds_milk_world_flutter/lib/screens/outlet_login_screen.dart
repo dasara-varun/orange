@@ -4,9 +4,7 @@ import '../services/api_service.dart';
 import 'staff_console_screen.dart';
 
 class OutletLoginScreen extends StatefulWidget {
-  final VoidCallback? onBackToCustomer;
-
-  const OutletLoginScreen({super.key, this.onBackToCustomer});
+  const OutletLoginScreen({super.key});
 
   @override
   State<OutletLoginScreen> createState() => _OutletLoginScreenState();
@@ -121,17 +119,15 @@ class _OutletLoginScreenState extends State<OutletLoginScreen> with SingleTicker
         builder: (_) => StaffConsoleScreen(
           staffRole: role,
           onBackToStorefront: () {
-            if (widget.onBackToCustomer != null) {
-              widget.onBackToCustomer!();
-            } else {
-              Navigator.pop(context);
-            }
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (_) => const OutletLoginScreen()),
+            );
           },
         ),
       ),
     );
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -139,12 +135,6 @@ class _OutletLoginScreenState extends State<OutletLoginScreen> with SingleTicker
       backgroundColor: AppTheme.milk,
       appBar: AppBar(
         title: const Text('Outlet Staff Portal'),
-        leading: widget.onBackToCustomer != null
-            ? IconButton(
-                icon: const Icon(Icons.arrow_back),
-                onPressed: widget.onBackToCustomer,
-              )
-            : null,
       ),
       body: SafeArea(
         child: Center(

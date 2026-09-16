@@ -844,7 +844,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
               const Divider(height: 20),
               Text('Invoice No: $invId', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
               Text('Order Ref: ${order.orderNumber}', style: const TextStyle(fontSize: 12)),
-              Text('Billed To: ${order.customerName ?? 'Customer'} (${order.customerPhone})', style: const TextStyle(fontSize: 12)),
+              Text('Billed To: ${order.customerName ?? ""} (${order.customerPhone})', style: const TextStyle(fontSize: 12)),
               if (order.customerEmail != null)
                 Text('Email: ${order.customerEmail}', style: const TextStyle(fontSize: 12)),
               const Divider(height: 20),

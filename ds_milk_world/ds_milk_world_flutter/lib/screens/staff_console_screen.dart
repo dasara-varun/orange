@@ -401,7 +401,7 @@ class _StaffConsoleScreenState extends State<StaffConsoleScreen> with SingleTick
                 style: const TextStyle(fontFamily: 'monospace', fontSize: 11),
               ),
               Text(
-                'CUST : ${order.customerName ?? "Customer"} (${order.customerPhone})',
+                'CUST : ${order.customerName ?? ""} (${order.customerPhone})',
                 style: const TextStyle(fontFamily: 'monospace', fontSize: 11),
               ),
               if (order.landmark != null && order.landmark!.isNotEmpty)
