@@ -15,3 +15,4 @@ config/passwords.yaml
 # Binaries & Tool Caches
 **/scripts/bin/
 *.exe
+.wrangler/
