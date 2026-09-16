@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import '../state/cart_state.dart';
-import '../screens/address_quote_screen.dart';
+import '../screens/location_picker_screen.dart';
 
 class FloatingCartBar extends StatelessWidget {
   const FloatingCartBar({super.key});
@@ -372,11 +372,11 @@ class _CartReviewSheetState extends State<CartReviewSheet> {
                         Navigator.pop(context); // close cart sheet
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (_) => const AddressQuoteScreen()),
+                          MaterialPageRoute(builder: (_) => const LocationPickerScreen()),
                         );
                       },
                       child: const Text(
-                        'Enter Delivery Address & Check Radius →',
+                        'Select Delivery Location on Map →',
                         style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
                       ),
                     ),

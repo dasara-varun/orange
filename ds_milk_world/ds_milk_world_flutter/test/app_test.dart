@@ -5,6 +5,7 @@ import 'package:ds_milk_world_flutter/main.dart';
 import 'package:ds_milk_world_flutter/state/cart_state.dart';
 import 'package:ds_milk_world_flutter/services/mock_data.dart';
 import 'package:ds_milk_world_flutter/screens/order_history_screen.dart';
+import 'package:ds_milk_world_flutter/screens/location_picker_screen.dart';
 import 'package:ds_milk_world_flutter/widgets/interactive_map_picker.dart';
 
 void main() {
@@ -127,6 +128,26 @@ void main() {
       expect(find.byTooltip('Center on Kanuru Outlet'), findsOneWidget);
       expect(find.text('Kanuru Center (Outlet Location)'), findsOneWidget);
       expect(find.text('Rapido Bike Parcel'), findsOneWidget);
+    });
+
+    testWidgets('LocationPickerScreen renders full-screen OpenStreetMap, zoom controls and CTA', (WidgetTester tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: LocationPickerScreen(
+            initialLat: 16.4854333,
+            initialLng: 80.6874703,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Select Delivery Location'), findsOneWidget);
+      expect(find.text('Kanuru Center (D.S MILK WORLD)'), findsWidgets);
+      expect(find.byTooltip('Zoom In'), findsOneWidget);
+      expect(find.byTooltip('Zoom Out'), findsOneWidget);
+      expect(find.byTooltip('Locate Me (GPS)'), findsOneWidget);
+      expect(find.byTooltip('Center on D.S MILK WORLD'), findsOneWidget);
+      expect(find.text('Confirm Location & Enter Address →'), findsOneWidget);
     });
   });
 }

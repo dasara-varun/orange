@@ -42,17 +42,17 @@ class AddressSearchResult {
 
 class RapidoLiveService {
   // DS Milk World Counter - Kanuru Center, Bandar Road, Vijayawada
-  static const double outletLat = 16.4850;
-  static const double outletLng = 80.6900;
+  static const double outletLat = 16.4854333;
+  static const double outletLng = 80.6874703;
   static const double maxServiceRadiusKm = 5.0;
 
   // Curated prominent localities in Vijayawada for instant sub-second lookup
   static final List<AddressSearchResult> _vijayawadaLocalities = [
     AddressSearchResult(
-      title: 'Kanuru Center',
-      fullAddress: 'Bandar Road, Near Kanuru Junction, Vijayawada, AP 520007',
-      latitude: 16.4850,
-      longitude: 80.6900,
+      title: 'Kanuru Center (D.S MILK WORLD)',
+      fullAddress: 'Bandar Road, Near Kanuru Center, Vijayawada, AP 520007',
+      latitude: 16.4854333,
+      longitude: 80.6874703,
     ),
     AddressSearchResult(
       title: 'Poranki',

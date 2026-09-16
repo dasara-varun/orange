@@ -5,9 +5,12 @@ import '../state/cart_state.dart';
 import '../services/api_service.dart';
 import '../widgets/interactive_map_picker.dart';
 import 'checkout_screen.dart';
+import 'location_picker_screen.dart';
 
 class AddressQuoteScreen extends StatefulWidget {
-  const AddressQuoteScreen({super.key});
+  final MapLocation? initialLocation;
+
+  const AddressQuoteScreen({super.key, this.initialLocation});
 
   @override
   State<AddressQuoteScreen> createState() => _AddressQuoteScreenState();
@@ -23,9 +26,10 @@ class _AddressQuoteScreenState extends State<AddressQuoteScreen> {
 
   bool _consentTransactionalEmail = true;
 
-  // Initial map center at Kanuru store
+  // Selected coordinates (from map selection)
   double _selectedLat = 16.4854333;
   double _selectedLng = 80.6874703;
+  String? _landmarkName;
 
   bool _isLoadingQuote = false;
   DeliveryQuote? _quote;
@@ -35,6 +39,7 @@ class _AddressQuoteScreenState extends State<AddressQuoteScreen> {
     setState(() {
       _selectedLat = loc.latitude;
       _selectedLng = loc.longitude;
+      _landmarkName = loc.nearestLandmark;
       final roadInfo = loc.roadDistanceText != null
           ? '${loc.roadDistanceText} (~${loc.durationMinutes ?? 12} mins ETA)'
           : '${loc.distanceKm} km from Kanuru';
@@ -43,7 +48,7 @@ class _AddressQuoteScreenState extends State<AddressQuoteScreen> {
         distanceKm: loc.distanceKm,
         feePaise: loc.feePaise,
         message: loc.isServiceable
-            ? 'Serviceable ($roadInfo • Rapido Bike Parcel)'
+            ? 'Serviceable ($roadInfo • Direct Cold Chain)'
             : 'Delivery location is ${loc.distanceKm} km away. Maximum service radius is 5.0 km.',
       );
     });
@@ -52,7 +57,20 @@ class _AddressQuoteScreenState extends State<AddressQuoteScreen> {
   @override
   void initState() {
     super.initState();
-    _fetchQuote();
+    if (widget.initialLocation != null) {
+      final loc = widget.initialLocation!;
+      _selectedLat = loc.latitude;
+      _selectedLng = loc.longitude;
+      _landmarkName = loc.nearestLandmark;
+      _quote = DeliveryQuote(
+        serviceable: loc.isServiceable,
+        distanceKm: loc.distanceKm,
+        feePaise: loc.feePaise,
+        message: 'Delivery location confirmed (${loc.distanceKm} km from Kanuru)',
+      );
+    } else {
+      _fetchQuote();
+    }
   }
 
   @override
@@ -270,25 +288,122 @@ class _AddressQuoteScreenState extends State<AddressQuoteScreen> {
               ),
               const SizedBox(height: 20),
 
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: const [
-                  Text(
-                    'Delivery Location Pin',
-                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: AppTheme.cocoa),
+              if (widget.initialLocation != null || _landmarkName != null) ...[
+                Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: AppTheme.cream,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppTheme.border),
                   ),
-                  Text(
-                    'Drag pin or tap map to set location',
-                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppTheme.muted),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: AppTheme.cocoa,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Icon(Icons.location_on, color: AppTheme.saffron, size: 22),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              _landmarkName ?? 'Kanuru, Bandar Road',
+                              style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14, color: AppTheme.cocoa),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              '${_quote?.distanceKm.toStringAsFixed(1) ?? "0.5"} km from Kanuru • ₹${((_quote?.feePaise ?? 3000) / 100).toInt()} Delivery Fee',
+                              style: const TextStyle(fontSize: 12, color: AppTheme.muted, fontWeight: FontWeight.w600),
+                            ),
+                          ],
+                        ),
+                      ),
+                      OutlinedButton.icon(
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: AppTheme.cocoa,
+                          side: const BorderSide(color: AppTheme.cocoa),
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          minimumSize: Size.zero,
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        ),
+                        icon: const Icon(Icons.map_outlined, size: 14),
+                        label: const Text('Change Pin', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+                        onPressed: () async {
+                          final newLoc = await Navigator.push<MapLocation>(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => LocationPickerScreen(
+                                initialLat: _selectedLat,
+                                initialLng: _selectedLng,
+                                returnOnConfirm: true,
+                              ),
+                            ),
+                          );
+                          if (newLoc != null && mounted) {
+                            _onMapLocationChanged(newLoc);
+                          }
+                        },
+                      ),
+                    ],
                   ),
-                ],
-              ),
-              const SizedBox(height: 10),
-              InteractiveMapPicker(
-                initialLat: _selectedLat,
-                initialLng: _selectedLng,
-                onLocationChanged: _onMapLocationChanged,
-              ),
+                ),
+              ] else ...[
+                InkWell(
+                  onTap: () async {
+                    final newLoc = await Navigator.push<MapLocation>(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => LocationPickerScreen(
+                          initialLat: _selectedLat,
+                          initialLng: _selectedLng,
+                          returnOnConfirm: true,
+                        ),
+                      ),
+                    );
+                    if (newLoc != null && mounted) {
+                      _onMapLocationChanged(newLoc);
+                    }
+                  },
+                  borderRadius: BorderRadius.circular(12),
+                  child: Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: AppTheme.cream,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppTheme.saffronDark),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.map, color: AppTheme.cocoa, size: 24),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: const [
+                              Text(
+                                'Pin Delivery Location on Map',
+                                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14, color: AppTheme.cocoa),
+                              ),
+                              SizedBox(height: 2),
+                              Text(
+                                'Select your exact location on our full-screen map',
+                                style: TextStyle(fontSize: 12, color: AppTheme.muted),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const Icon(Icons.chevron_right, color: AppTheme.cocoa),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
               const SizedBox(height: 16),
 
               TextFormField(
