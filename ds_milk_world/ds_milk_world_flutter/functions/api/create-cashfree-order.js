@@ -50,7 +50,32 @@ export async function onRequestPost(context) {
       body: JSON.stringify(payload)
     });
 
-    const data = await cfRes.json();
+    let data = await cfRes.json();
+
+    // If order already exists in Cashfree, fetch existing order session for retry
+    if (cfRes.status === 409 || data?.code === "order_already_exists") {
+      const getRes = await fetch(`${baseUrl}/orders/${orderId}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-version": apiVersion,
+          "x-client-id": appId,
+          "x-client-secret": secretKey
+        }
+      });
+      if (getRes.status === 200) {
+        data = await getRes.json();
+        return new Response(JSON.stringify(data), {
+          status: 200,
+          headers: {
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Headers": "Content-Type"
+          }
+        });
+      }
+    }
+
     return new Response(JSON.stringify(data), {
       status: cfRes.status,
       headers: {

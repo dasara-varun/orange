@@ -76,13 +76,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           ),
         ),
         actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              _completeViaVerification();
-            },
-            child: const Text('Simulate Order (Verification Mode)', style: TextStyle(color: AppTheme.saffronDark, fontWeight: FontWeight.w700)),
-          ),
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx),
             style: ElevatedButton.styleFrom(backgroundColor: AppTheme.cocoa, foregroundColor: Colors.white),
@@ -91,41 +84,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         ],
       ),
     );
-  }
-
-  Future<void> _completeViaVerification() async {
-    setState(() {
-      _isProcessing = true;
-      _processingStep = 'Confirming order for kitchen preparation...';
-    });
-
-    try {
-      await ApiService.instance.processPaymentWebhook(
-        orderNumber: widget.order.orderNumber,
-        externalId: 'VERIF-${DateTime.now().millisecondsSinceEpoch}',
-        status: 'successful',
-        amountPaise: widget.order.totalPaise,
-      );
-
-      CartState.instance.clearCart();
-
-      if (!mounted) return;
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (_) => OrderTrackingScreen(orderNumber: widget.order.orderNumber),
-        ),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _isProcessing = false;
-        _processingStep = null;
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Verification Error: $e'), backgroundColor: AppTheme.error),
-      );
-    }
   }
 
   Future<void> _processPayment() async {
@@ -173,7 +131,17 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             _isProcessing = false;
             _processingStep = null;
           });
-          _showWhitelistingHelpDialog(result.error);
+          final errStr = result.error ?? '';
+          if (errStr.toLowerCase().contains('whitelist') || errStr.toLowerCase().contains('not enabled or approved')) {
+            _showWhitelistingHelpDialog(errStr);
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(errStr.isNotEmpty ? errStr : 'Payment was not completed. Please try again.'),
+                backgroundColor: AppTheme.cocoa,
+              ),
+            );
+          }
           return;
         }
 
@@ -188,25 +156,43 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           _processingStep = 'Verifying payment status with Cashfree...';
         });
 
-        await ApiService.instance.verifyCashfreePayment(widget.order.orderNumber);
+        bool isPaid = false;
+        for (int i = 0; i < 4; i++) {
+          isPaid = await ApiService.instance.verifyCashfreePayment(widget.order.orderNumber);
+          if (isPaid) break;
+          if (i < 3) await Future.delayed(const Duration(milliseconds: 1500));
+        }
+
+        if (!isPaid) {
+          if (!mounted) return;
+          setState(() {
+            _isProcessing = false;
+            _processingStep = null;
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Payment was not completed or is still processing. Please complete payment inside Cashfree to confirm your order.'),
+              backgroundColor: AppTheme.cocoa,
+            ),
+          );
+          return;
+        }
       } else {
-        // Fallback simulated payment gateway confirmation
-        await Future.delayed(const Duration(milliseconds: 1200));
         if (!mounted) return;
         setState(() {
-          _processingStep = 'Confirming payment with bank...';
+          _isProcessing = false;
+          _processingStep = null;
         });
-        await Future.delayed(const Duration(milliseconds: 1200));
-
-        await ApiService.instance.processPaymentWebhook(
-          orderNumber: widget.order.orderNumber,
-          externalId: attempt.externalId,
-          status: 'successful',
-          amountPaise: widget.order.totalPaise,
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Unable to initiate Cashfree payment session. Please check your internet connection and try again.'),
+            backgroundColor: AppTheme.error,
+          ),
         );
+        return;
       }
 
-      // Clear customer shopping cart
+      // Clear customer shopping cart only after confirmed payment
       CartState.instance.clearCart();
 
       if (!mounted) return;
@@ -573,24 +559,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 label: Text(
                   'Pay ${AppTheme.formatPaise(order.totalPaise)} via Cashfree →',
                   style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800),
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
-            Center(
-              child: InkWell(
-                onTap: () => _showWhitelistingHelpDialog(),
-                borderRadius: BorderRadius.circular(6),
-                child: const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  child: Text(
-                    'Cashfree domain whitelisting info & test mode',
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: AppTheme.muted,
-                      decoration: TextDecoration.underline,
-                    ),
-                  ),
                 ),
               ),
             ),

@@ -1,4 +1,4 @@
-﻿import 'dart:convert';
+import 'dart:convert';
 import 'dart:js_interop';
 import 'cashfree_checkout_stub.dart';
 
@@ -18,10 +18,12 @@ Future<CashfreeCheckoutResult> launchCashfreeWebCheckout({
     if (data.containsKey('error')) {
       final err = data['error'];
       final msg = err is Map ? (err['message'] ?? 'Payment was not completed.') : err.toString();
-      final isDismissed = msg.toString().toLowerCase().contains('dismiss') ||
-          msg.toString().toLowerCase().contains('close') ||
-          msg.toString().toLowerCase().contains('cancel') ||
-          msg.toString().toLowerCase().contains('user');
+      final lower = msg.toString().toLowerCase();
+      final isDismissed = lower.contains('dismiss') ||
+          lower.contains('close') ||
+          lower.contains('cancel') ||
+          lower.contains('user') ||
+          lower.contains('not completed');
       return CashfreeCheckoutResult(
         isSuccess: false,
         isDismissed: isDismissed,
