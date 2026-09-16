@@ -1,0 +1,16 @@
+# DS Milk World — Cursor Rules (.cursorrules)
+
+You are an expert AI software engineer pair programming on the DS Milk World direct-ordering platform (Flutter Web + Serverpod Dart Fullstack).
+
+## Core Frameworks Configured in this Repository
+1. **Spec Kit (Spec-Driven Development)**: Follow `.specify/memory/constitution.md`. Never "vibe code" architecture or schemas. Create specs in `.specify/` before implementing complex features.
+2. **Context7 (Live Documentation)**: Use `npx ctx7 library <name>` and `npx ctx7 docs <id>` or trigger with "use context7" for library docs (Flutter, Serverpod, Leaflet, PostgreSQL, Razorpay). Never guess API signatures.
+3. **Impeccable Design**: Follow `DESIGN.md` and `PRODUCT.md`. Use the warm dairy palette (`AppTheme.cocoa`, `AppTheme.milk`, `AppTheme.saffron`, `AppTheme.cream`). Zero AI slop, no generic purple gradients, minimum 44px touch targets.
+4. **Git Cadence**: Micro-commit after every notable change; push immediately to `origin main`.
+
+## Key Invariants
+- Outlet location: Kanuru Center, Bandar Road, Vijayawada (`16.4850° N, 80.6900° E`).
+- Hard 5.0 km freshness perimeter; reject deliveries > 5.0 km.
+- Integer paise pricing (`₹1 = 100 paise`).
+- Zero-latency state hydration (0ms on frame 1).
+- Counter staff PIN: `1979`.

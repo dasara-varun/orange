@@ -11,3 +11,7 @@ config/passwords.yaml
 *.db
 *.log
 *.apk
+
+# Binaries & Tool Caches
+**/scripts/bin/
+*.exe
