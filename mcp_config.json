@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "cashfree": {
+      "type": "http",
+      "url": "https://mcp.cashfree.com/mcp",
+      "description": "Cashfree Merchant Dashboard and Payment Gateway MCP Server"
+    },
+    "context7": {
+      "command": "npx",
+      "args": ["-y", "@upstash/context7-mcp"],
+      "description": "Context7 live documentation context server"
+    }
+  }
+}
