@@ -4,6 +4,7 @@ import 'package:ds_milk_world_client/ds_milk_world_client.dart';
 import '../theme/app_theme.dart';
 import '../state/cart_state.dart';
 import '../services/api_service.dart';
+import '../services/cashfree_checkout/cashfree_checkout.dart';
 import 'order_tracking_screen.dart';
 
 class CheckoutScreen extends StatefulWidget {
@@ -34,7 +35,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   Future<void> _processPayment() async {
     setState(() {
       _isProcessing = true;
-      _processingStep = 'Connecting to payment provider...';
+      _processingStep = 'Connecting to Cashfree Payments...';
     });
 
     try {
@@ -44,27 +45,82 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         _paymentMethod,
       );
 
-      // 2. Simulated payment gateway interaction / bank confirmation delay
-      await Future.delayed(const Duration(milliseconds: 1200));
-      if (!mounted) return;
-      setState(() {
-        _processingStep = 'We are confirming payment with your bank...';
-      });
-      await Future.delayed(const Duration(milliseconds: 1500));
+      // If Cashfree provider is returned with a live session id
+      if (attempt.provider == 'cashfree' && attempt.rawReference != null && attempt.rawReference!.isNotEmpty) {
+        setState(() {
+          _processingStep = 'Opening Cashfree secure checkout modal...';
+        });
 
-      // 3. Process webhook idempotently
-      await ApiService.instance.processPaymentWebhook(
-        orderNumber: widget.order.orderNumber,
-        externalId: attempt.externalId,
-        status: 'successful',
-        amountPaise: widget.order.totalPaise,
-      );
+        final result = await launchCashfreeWebCheckout(
+          paymentSessionId: attempt.rawReference!,
+          redirectTarget: '_modal',
+        );
 
-      // 4. Clear customer shopping cart
+        if (result.isDismissed) {
+          if (!mounted) return;
+          setState(() {
+            _isProcessing = false;
+            _processingStep = null;
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Payment was not completed. You can retry whenever you are ready.'),
+              backgroundColor: AppTheme.cocoa,
+            ),
+          );
+          return;
+        }
+
+        if (!result.isSuccess && !result.isRedirecting) {
+          if (!mounted) return;
+          setState(() {
+            _isProcessing = false;
+            _processingStep = null;
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Payment not completed: ${result.error ?? "Please try again"}'),
+              backgroundColor: AppTheme.error,
+            ),
+          );
+          return;
+        }
+
+        if (result.isRedirecting) {
+          // Navigating away to bank authentication
+          return;
+        }
+
+        // Cashfree payment attempt submitted; verify status with backend
+        if (!mounted) return;
+        setState(() {
+          _processingStep = 'Verifying payment status with Cashfree...';
+        });
+
+        await ApiService.instance.verifyCashfreePayment(widget.order.orderNumber);
+      } else {
+        // Fallback simulated payment gateway confirmation
+        await Future.delayed(const Duration(milliseconds: 1200));
+        if (!mounted) return;
+        setState(() {
+          _processingStep = 'We are confirming payment with your bank...';
+        });
+        await Future.delayed(const Duration(milliseconds: 1500));
+
+        // Process webhook idempotently
+        await ApiService.instance.processPaymentWebhook(
+          orderNumber: widget.order.orderNumber,
+          externalId: attempt.externalId,
+          status: 'successful',
+          amountPaise: widget.order.totalPaise,
+        );
+      }
+
+      // Clear customer shopping cart
       CartState.instance.clearCart();
 
       if (!mounted) return;
-      // 5. Navigate to live order tracking screen
+      // Navigate to live order tracking screen
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(

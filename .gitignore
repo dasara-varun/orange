@@ -11,6 +11,8 @@ config/passwords.yaml
 *.db
 *.log
 *.apk
+.env
+*.env
 
 # Binaries & Tool Caches
 **/scripts/bin/

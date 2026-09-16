@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'dart:math';
+import 'package:http/http.dart' as http;
 import 'package:ds_milk_world_client/ds_milk_world_client.dart';
 import '../main.dart';
 import 'mock_data.dart';
@@ -306,8 +308,47 @@ class ApiService {
   }
 
   Future<PaymentAttempt> createCheckoutSession(String orderNumber, String paymentMethod) async {
+    final order = _orders[orderNumber];
+
+    // Priority 1: Cloudflare Edge Function calling Cashfree Production PG
+    try {
+      final cfUrl = Uri.parse('/api/create-cashfree-order');
+      final resp = await http.post(
+        cfUrl,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'order_id': orderNumber,
+          'order_amount': ((order?.totalPaise ?? 100) / 100.0),
+          'customer_phone': order?.customerPhone ?? '9848012345',
+          'customer_name': order?.customerName ?? 'Customer',
+          'customer_email': order?.customerEmail ?? 'orders@dsmilkworld.isroot.in',
+        }),
+      ).timeout(const Duration(seconds: 4));
+
+      if (resp.statusCode >= 200 && resp.statusCode < 300) {
+        final data = jsonDecode(resp.body) as Map<String, dynamic>;
+        final sessionId = data['payment_session_id'] as String?;
+        final cfOrderId = data['cf_order_id']?.toString() ?? 'CF-$orderNumber';
+        if (sessionId != null && sessionId.isNotEmpty) {
+          final attempt = PaymentAttempt(
+            orderNumber: orderNumber,
+            provider: 'cashfree',
+            externalId: cfOrderId,
+            amountPaise: order?.totalPaise ?? 0,
+            status: 'pending',
+            paymentMethod: paymentMethod,
+            rawReference: sessionId,
+            createdAt: DateTime.now(),
+          );
+          _logLocalEvent(orderNumber, 'payment_attempt_created', 'cashfree', 'Cashfree session initialized: $cfOrderId');
+          return attempt;
+        }
+      }
+    } catch (_) {
+      // Continue to Serverpod / local fallback
+    }
+
     if (_hasCheckedServer && !_serverOnline) {
-      final order = _orders[orderNumber];
       return PaymentAttempt(
         orderNumber: orderNumber,
         provider: 'generic_simulator',
@@ -320,14 +361,13 @@ class ApiService {
       );
     }
     try {
-      final res = await client.checkout.createCheckoutSession(orderNumber, paymentMethod).timeout(const Duration(milliseconds: 350));
+      final res = await client.checkout.createCheckoutSession(orderNumber, paymentMethod).timeout(const Duration(milliseconds: 450));
       _serverOnline = true;
       _hasCheckedServer = true;
       return res;
     } catch (_) {
       _serverOnline = false;
       _hasCheckedServer = true;
-      final order = _orders[orderNumber];
       return PaymentAttempt(
         orderNumber: orderNumber,
         provider: 'generic_simulator',
@@ -339,6 +379,34 @@ class ApiService {
         createdAt: DateTime.now(),
       );
     }
+  }
+
+  /// Verify Cashfree payment status against authoritative PG endpoint
+  Future<bool> verifyCashfreePayment(String orderNumber) async {
+    try {
+      final cfUrl = Uri.parse('/api/verify-payment');
+      final resp = await http.post(
+        cfUrl,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'order_id': orderNumber}),
+      ).timeout(const Duration(seconds: 5));
+
+      if (resp.statusCode == 200) {
+        final data = jsonDecode(resp.body) as Map<String, dynamic>;
+        final status = data['order_status']?.toString().toUpperCase();
+        if (status == 'PAID') {
+          final order = _orders[orderNumber];
+          if (order != null) {
+            order.status = 'shop_acceptance_pending';
+            order.updatedAt = DateTime.now();
+            _logLocalEvent(orderNumber, 'payment_successful', 'cashfree', 'Cashfree payment confirmed (PAID)');
+            _logLocalEvent(orderNumber, 'shop_acceptance_pending', 'system', 'Queued for counter preparation');
+          }
+          return true;
+        }
+      }
+    } catch (_) {}
+    return false;
   }
 
   Future<bool> processPaymentWebhook({

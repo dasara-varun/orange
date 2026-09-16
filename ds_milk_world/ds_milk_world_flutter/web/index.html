@@ -140,6 +140,40 @@
     // Fallback safety timeout in case event is missed
     setTimeout(removeSplash, 4000);
   </script>
+
+  <!-- Cashfree Payment Gateway Web SDK (v3) -->
+  <script src="https://sdk.cashfree.com/js/v3/cashfree.js"></script>
+  <script>
+    // Initialise Cashfree ONCE at page load (production mode)
+    var cashfreeInstance = null;
+    function getCashfree() {
+      if (!cashfreeInstance && typeof Cashfree !== 'undefined') {
+        cashfreeInstance = Cashfree({ mode: "production" });
+      }
+      return cashfreeInstance;
+    }
+
+    // Bridge for Flutter Web checkout
+    window.launchCashfreeCheckout = function(sessionId, redirectTarget) {
+      return new Promise(async function(resolve) {
+        try {
+          var cf = getCashfree();
+          if (!cf) {
+            resolve(JSON.stringify({ error: { message: "Cashfree SDK failed to initialize" } }));
+            return;
+          }
+          var result = await cf.checkout({
+            paymentSessionId: sessionId,
+            redirectTarget: redirectTarget || "_modal"
+          });
+          resolve(JSON.stringify(result || {}));
+        } catch (err) {
+          resolve(JSON.stringify({ error: { message: err ? (err.message || err.toString()) : "Payment session cancelled" } }));
+        }
+      });
+    };
+  </script>
+
   <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>
