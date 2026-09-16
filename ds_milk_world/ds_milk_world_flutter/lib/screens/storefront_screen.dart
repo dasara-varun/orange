@@ -81,56 +81,68 @@ class _StorefrontScreenState extends State<StorefrontScreen> {
         child: Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 860),
-            child: Column(
+            child: Stack(
               children: [
-                // Outlet Header
-                OutletHeader(
-                  onSearchChanged: (val) => setState(() => _searchQuery = val),
-                  onOpenHistory: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const OrderHistoryScreen()),
-                  ),
-                ),
-                // Category Rail
-                if (_catalog != null)
-                  CategoryRail(
-                    categories: _catalog!.categories,
-                    selectedCategory: _selectedCategory,
-                    onSelectCategory: (cat) => setState(() => _selectedCategory = cat),
-                    itemCounts: categoryCounts,
-                  ),
-                // Product List / Grid
-                Expanded(
-                  child: _catalog == null
-                      ? const Center(
-                          child: CircularProgressIndicator(color: AppTheme.saffron),
-                        )
-                      : groupedProducts.isEmpty
-                          ? Center(
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  const Icon(Icons.search_off, size: 48, color: AppTheme.muted),
-                                  const SizedBox(height: 12),
-                                  Text(
-                                    'No matching items found for "$_searchQuery"',
-                                    style: const TextStyle(color: AppTheme.muted, fontSize: 14),
-                                  ),
-                                ],
-                              ),
+                // Layer 1: Storefront Menu (always 100% visible and scrollable)
+                Column(
+                  children: [
+                    // Outlet Header
+                    OutletHeader(
+                      onSearchChanged: (val) => setState(() => _searchQuery = val),
+                      onOpenHistory: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const OrderHistoryScreen()),
+                      ),
+                    ),
+                    // Category Rail
+                    if (_catalog != null)
+                      CategoryRail(
+                        categories: _catalog!.categories,
+                        selectedCategory: _selectedCategory,
+                        onSelectCategory: (cat) => setState(() => _selectedCategory = cat),
+                        itemCounts: categoryCounts,
+                      ),
+                    // Product List / Grid
+                    Expanded(
+                      child: _catalog == null
+                          ? const Center(
+                              child: CircularProgressIndicator(color: AppTheme.saffron),
                             )
-                          : ListView.builder(
-                              padding: const EdgeInsets.only(top: 8, bottom: 90),
-                              itemCount: groupedProducts.length,
-                              itemBuilder: (context, idx) => ProductCard(variants: groupedProducts[idx]),
-                            ),
+                          : groupedProducts.isEmpty
+                              ? Center(
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      const Icon(Icons.search_off, size: 48, color: AppTheme.muted),
+                                      const SizedBox(height: 12),
+                                      Text(
+                                        'No matching items found for "$_searchQuery"',
+                                        style: const TextStyle(color: AppTheme.muted, fontSize: 14),
+                                      ),
+                                    ],
+                                  ),
+                                )
+                              : ListView.builder(
+                                  padding: const EdgeInsets.only(top: 8, bottom: 80),
+                                  itemCount: groupedProducts.length,
+                                  itemBuilder: (context, idx) => ProductCard(variants: groupedProducts[idx]),
+                                ),
+                    ),
+                  ],
+                ),
+
+                // Layer 2: Sleek Floating Cart Bar (floats on top of menu list at bottom)
+                const Positioned(
+                  left: 12,
+                  right: 12,
+                  bottom: 12,
+                  child: FloatingCartBar(),
                 ),
               ],
             ),
           ),
         ),
       ),
-      bottomNavigationBar: const FloatingCartBar(),
     );
   }
 }
