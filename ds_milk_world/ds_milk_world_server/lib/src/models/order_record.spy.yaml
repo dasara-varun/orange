@@ -3,6 +3,7 @@ table: order_record
 fields:
   orderNumber: String
   customerPhone: String
+  customerEmail: String?
   customerName: String?
   deliveryAddress: String
   landmark: String?
@@ -18,5 +19,8 @@ fields:
   prepTimeMinutes: int?
   rejectionReason: String?
   packingChecklistConfirmed: bool
+  invoiceId: String?
+  invoicePdfUrl: String?
+  invoiceStatus: String?
   createdAt: DateTime
   updatedAt: DateTime

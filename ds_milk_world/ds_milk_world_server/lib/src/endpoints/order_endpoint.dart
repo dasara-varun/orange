@@ -6,6 +6,7 @@ class OrderEndpoint extends Endpoint {
   Future<OrderRecord> createOrder(
     Session session,
     String customerPhone,
+    String? customerEmail,
     String? customerName,
     String deliveryAddress,
     String? landmark,
@@ -15,6 +16,7 @@ class OrderEndpoint extends Endpoint {
   ) async {
     return OrderService.createOrder(
       customerPhone: customerPhone,
+      customerEmail: customerEmail,
       customerName: customerName,
       deliveryAddress: deliveryAddress,
       landmark: landmark,

@@ -217,13 +217,18 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   ),
                   const Divider(color: AppTheme.border, height: 20),
                   const Text(
-                    'Deliver to:',
+                    'Deliver to & Billed to:',
                     style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppTheme.muted),
                   ),
                   Text(
                     '${order.customerName != null ? "${order.customerName} • " : ""}${order.customerPhone}',
                     style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.cocoa),
                   ),
+                  if (order.customerEmail != null && order.customerEmail!.isNotEmpty)
+                    Text(
+                      'Email: ${order.customerEmail} (Invoice destination)',
+                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: AppTheme.cocoa),
+                    ),
                   Text(
                     order.deliveryAddress,
                     style: const TextStyle(fontSize: 12, color: AppTheme.cocoa),

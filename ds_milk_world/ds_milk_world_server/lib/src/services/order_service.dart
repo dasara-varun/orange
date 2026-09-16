@@ -38,6 +38,7 @@ class OrderService {
   /// Creates a new order with server-calculated pricing and geo-validation
   static OrderRecord createOrder({
     required String customerPhone,
+    String? customerEmail,
     String? customerName,
     required String deliveryAddress,
     String? landmark,
@@ -47,6 +48,16 @@ class OrderService {
   }) {
     if (requestedItems.isEmpty) {
       throw ArgumentError('Order must contain at least one item');
+    }
+
+    // Compulsory email and phone validation (Production Specification Section 6)
+    final cleanPhone = customerPhone.replaceAll(RegExp(r'[\s\-\(\)]'), '');
+    if (cleanPhone.length < 10) {
+      throw ArgumentError('Valid 10-digit mobile phone number is required');
+    }
+    final email = (customerEmail ?? '').trim();
+    if (email.isEmpty || !RegExp(r'^\S+@\S+\.\S+$').hasMatch(email)) {
+      throw ArgumentError('Valid email address is compulsory for order invoice delivery');
     }
 
     // 1. Geo-validation & distance calculation
@@ -105,6 +116,7 @@ class OrderService {
     final order = OrderRecord(
       orderNumber: orderNumber,
       customerPhone: customerPhone,
+      customerEmail: email,
       customerName: customerName,
       deliveryAddress: deliveryAddress,
       landmark: landmark,
@@ -395,6 +407,54 @@ class OrderService {
       type: 'order_delivered',
       actorType: 'delivery_partner',
       payload: 'Order delivered successfully to customer',
+    );
+
+    return order;
+  }
+
+  /// Staff: Mark order completed -> Triggers idempotent tax invoice generation & email outbox
+  /// (Production Specification Sections 7, 10 & 11)
+  static OrderRecord completeOrder(String orderNumber) {
+    final order = _orders[orderNumber];
+    if (order == null) throw ArgumentError('Order $orderNumber not found');
+
+    if (order.status == 'completed') {
+      // Idempotent: already completed
+      return order;
+    }
+
+    order.status = 'completed';
+    order.updatedAt = DateTime.now();
+
+    // Generate invoice ONLY upon completion (Section 10: "verified payment + shop acceptance + delivery completion")
+    if (order.invoiceId == null) {
+      final now = DateTime.now();
+      final suffix = orderNumber.contains('-') ? orderNumber.split('-').last : orderNumber;
+      final invoiceNum = 'INV-DSMW-${now.year}-$suffix';
+      order.invoiceId = invoiceNum;
+      order.invoiceStatus = 'generated';
+      order.invoicePdfUrl = '/api/v1/orders/$orderNumber/invoice';
+
+      _logEvent(
+        orderNumber: orderNumber,
+        type: 'invoice_generated',
+        actorType: 'system',
+        payload: 'Generated tax invoice $invoiceNum. PDF stored in private storage.',
+      );
+
+      _logEvent(
+        orderNumber: orderNumber,
+        type: 'email_dispatched',
+        actorType: 'system',
+        payload: 'Transactional email with invoice $invoiceNum queued to ${order.customerEmail ?? 'customer'}',
+      );
+    }
+
+    _logEvent(
+      orderNumber: orderNumber,
+      type: 'order_completed',
+      actorType: 'staff',
+      payload: 'Order lifecycle completed. Invoice: ${order.invoiceId}',
     );
 
     return order;

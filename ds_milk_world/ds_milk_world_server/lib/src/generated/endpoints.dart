@@ -208,6 +208,48 @@ class Endpoints extends _i1.EndpointDispatch {
             params['orderNumber'],
           ),
         ),
+        'completeOrder': _i1.MethodConnector(
+          name: 'completeOrder',
+          params: {
+            'orderNumber': _i1.ParameterDescription(
+              name: 'orderNumber',
+              type: _i1.getType<String>(),
+              nullable: false,
+            )
+          },
+          call: (
+            _i1.Session session,
+            Map<String, dynamic> params,
+          ) async =>
+              (endpoints['admin'] as _i2.AdminEndpoint).completeOrder(
+            session,
+            params['orderNumber'],
+          ),
+        ),
+        'authenticateStaff': _i1.MethodConnector(
+          name: 'authenticateStaff',
+          params: {
+            'username': _i1.ParameterDescription(
+              name: 'username',
+              type: _i1.getType<String>(),
+              nullable: false,
+            ),
+            'password': _i1.ParameterDescription(
+              name: 'password',
+              type: _i1.getType<String>(),
+              nullable: false,
+            ),
+          },
+          call: (
+            _i1.Session session,
+            Map<String, dynamic> params,
+          ) async =>
+              (endpoints['admin'] as _i2.AdminEndpoint).authenticateStaff(
+            session,
+            params['username'],
+            params['password'],
+          ),
+        ),
         'getDeliveryJob': _i1.MethodConnector(
           name: 'getDeliveryJob',
           params: {
@@ -504,6 +546,11 @@ class Endpoints extends _i1.EndpointDispatch {
               type: _i1.getType<String>(),
               nullable: false,
             ),
+            'customerEmail': _i1.ParameterDescription(
+              name: 'customerEmail',
+              type: _i1.getType<String?>(),
+              nullable: true,
+            ),
             'customerName': _i1.ParameterDescription(
               name: 'customerName',
               type: _i1.getType<String?>(),
@@ -542,6 +589,7 @@ class Endpoints extends _i1.EndpointDispatch {
               (endpoints['order'] as _i6.OrderEndpoint).createOrder(
             session,
             params['customerPhone'],
+            params['customerEmail'],
             params['customerName'],
             params['deliveryAddress'],
             params['landmark'],

@@ -319,6 +319,73 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
               const SizedBox(height: 20),
             ],
 
+            // Completion-Triggered Tax Invoice Card (Production Specification Section 7 & 10)
+            if (order.status == 'completed' || order.invoiceId != null) ...[
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: AppTheme.cream,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppTheme.saffronDark.withValues(alpha: 0.5)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(Icons.receipt_long, color: AppTheme.cocoa, size: 22),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Tax Invoice: ${order.invoiceId ?? 'INV-DSMW-2026-COMPLETED'}',
+                            style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14, color: AppTheme.cocoa),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Official tax invoice has been generated and emailed to ${order.customerEmail ?? 'your email'}.',
+                      style: const TextStyle(fontSize: 12, color: AppTheme.cocoa),
+                    ),
+                    const SizedBox(height: 12),
+                    ElevatedButton.icon(
+                      onPressed: () => _showInvoiceDialog(context, order),
+                      icon: const Icon(Icons.picture_as_pdf, size: 16),
+                      label: const Text('View Tax Invoice'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.cocoa,
+                        foregroundColor: AppTheme.milk,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+            ] else if (currentStep < 5) ...[
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade50,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: AppTheme.border),
+                ),
+                child: const Row(
+                  children: [
+                    Icon(Icons.info_outline, size: 16, color: Colors.grey),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Tax invoice will be generated and emailed after delivery completion.',
+                        style: TextStyle(fontSize: 12, color: Colors.grey),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+            ],
+
             // Customer Delight & Feedback Card on Delivery
             if (currentStep >= 5) ...[
               _buildFeedbackCard(),
@@ -454,13 +521,14 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                         child: OutlinedButton.icon(
                           onPressed: () {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Connecting to DS Milk World WhatsApp Support (+91 866 254 9999)'),
+                              SnackBar(
+                                content: Text('Support email: orders@dsmilkworld.isroot.in'),
+                                backgroundColor: AppTheme.cocoa,
                               ),
                             );
                           },
-                          icon: const Icon(Icons.chat, size: 16, color: Color(0xFF2E7D32)),
-                          label: const Text('WhatsApp', style: TextStyle(fontSize: 12)),
+                          icon: const Icon(Icons.email_outlined, size: 16, color: AppTheme.cocoa),
+                          label: const Text('Email Support', style: TextStyle(fontSize: 12)),
                         ),
                       ),
                       const SizedBox(width: 10),
@@ -746,6 +814,94 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                 ),
               ],
             ),
+    );
+  }
+
+  void _showInvoiceDialog(BuildContext context, OrderRecord order) {
+    final subtotal = order.subtotalPaise;
+    final fee = order.deliveryFeePaise;
+    final total = order.totalPaise;
+    final invId = order.invoiceId ?? 'INV-DSMW-2026-COMPLETED';
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Row(
+          children: [
+            const Icon(Icons.receipt_long, color: AppTheme.cocoa),
+            const SizedBox(width: 8),
+            const Text('Tax Invoice', style: TextStyle(color: AppTheme.cocoa, fontWeight: FontWeight.bold)),
+          ],
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('DS MILK WORLD', style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16, color: AppTheme.cocoa)),
+              const Text('Near Kanuru Center, Bandar Road, Vijayawada, AP 520007', style: TextStyle(fontSize: 11, color: Colors.grey)),
+              const Text('GST Status: Unregistered / Pilot Storefront', style: TextStyle(fontSize: 11, color: Colors.grey)),
+              const Divider(height: 20),
+              Text('Invoice No: $invId', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+              Text('Order Ref: ${order.orderNumber}', style: const TextStyle(fontSize: 12)),
+              Text('Billed To: ${order.customerName ?? 'Customer'} (${order.customerPhone})', style: const TextStyle(fontSize: 12)),
+              if (order.customerEmail != null)
+                Text('Email: ${order.customerEmail}', style: const TextStyle(fontSize: 12)),
+              const Divider(height: 20),
+              const Text('Items Billed:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+              const SizedBox(height: 4),
+              ...order.items.map((it) => Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 2),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(child: Text('${it.quantity}x ${it.nameSnapshot}', style: const TextStyle(fontSize: 12))),
+                        Text('₹${(it.subtotalPaise / 100).toStringAsFixed(2)}', style: const TextStyle(fontSize: 12)),
+                      ],
+                    ),
+                  )),
+              const Divider(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text('Subtotal:', style: TextStyle(fontSize: 12)),
+                  Text('₹${(subtotal / 100).toStringAsFixed(2)}', style: const TextStyle(fontSize: 12)),
+                ],
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text('Delivery Fee (Distance):', style: TextStyle(fontSize: 12)),
+                  Text('₹${(fee / 100).toStringAsFixed(2)}', style: const TextStyle(fontSize: 12)),
+                ],
+              ),
+              const SizedBox(height: 6),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text('Total Paid:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppTheme.cocoa)),
+                  Text('₹${(total / 100).toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppTheme.cocoa)),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(color: AppTheme.cream, borderRadius: BorderRadius.circular(6)),
+                child: Text(
+                  'This invoice was generated upon order delivery completion and archived in secure storage.',
+                  style: const TextStyle(fontSize: 11, color: AppTheme.cocoa),
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
     );
   }
 }

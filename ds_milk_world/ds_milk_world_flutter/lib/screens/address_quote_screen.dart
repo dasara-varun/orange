@@ -17,8 +17,11 @@ class _AddressQuoteScreenState extends State<AddressQuoteScreen> {
   final _formKey = GlobalKey<FormState>();
   final _phoneController = TextEditingController(text: '9876543210');
   final _nameController = TextEditingController(text: 'Ravi Teja');
+  final _emailController = TextEditingController(text: 'ravi.teja@gmail.com');
   final _addressController = TextEditingController(text: 'Flat 204, Kanuru Main Road, Kanuru, Vijayawada');
   final _landmarkController = TextEditingController(text: 'Near Kanuru Center');
+
+  bool _consentTransactionalEmail = true;
 
   // Interactive Map Pin toggle
   bool _useMapPicker = true;
@@ -27,8 +30,8 @@ class _AddressQuoteScreenState extends State<AddressQuoteScreen> {
   final List<Map<String, dynamic>> _locationPresets = [
     {
       'name': 'Kanuru (0.5 km)',
-      'lat': 16.4850,
-      'lng': 80.6900,
+      'lat': 16.4854333,
+      'lng': 80.6874703,
       'address': 'Flat 204, Kanuru Main Road, Kanuru, Vijayawada',
     },
     {
@@ -64,8 +67,8 @@ class _AddressQuoteScreenState extends State<AddressQuoteScreen> {
   ];
 
   int _selectedPresetIndex = 0;
-  double _selectedLat = 16.4850;
-  double _selectedLng = 80.6900;
+  double _selectedLat = 16.4854333;
+  double _selectedLng = 80.6874703;
 
   bool _isLoadingQuote = false;
   DeliveryQuote? _quote;
@@ -99,6 +102,7 @@ class _AddressQuoteScreenState extends State<AddressQuoteScreen> {
   void dispose() {
     _phoneController.dispose();
     _nameController.dispose();
+    _emailController.dispose();
     _addressController.dispose();
     _landmarkController.dispose();
     super.dispose();
@@ -129,6 +133,15 @@ class _AddressQuoteScreenState extends State<AddressQuoteScreen> {
 
   Future<void> _handleProceed() async {
     if (!_formKey.currentState!.validate()) return;
+    if (!_consentTransactionalEmail) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please consent to receiving transactional invoices via email to proceed.'),
+          backgroundColor: AppTheme.error,
+        ),
+      );
+      return;
+    }
     if (_quote == null || !_quote!.serviceable) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -150,7 +163,8 @@ class _AddressQuoteScreenState extends State<AddressQuoteScreen> {
 
       final order = await ApiService.instance.createOrder(
         customerPhone: '+91 ${_phoneController.text.trim()}',
-        customerName: _nameController.text.trim().isEmpty ? null : _nameController.text.trim(),
+        customerEmail: _emailController.text.trim(),
+        customerName: _nameController.text.trim().isEmpty ? 'Customer' : _nameController.text.trim(),
         deliveryAddress: _addressController.text.trim(),
         landmark: combinedLandmark.isEmpty ? null : combinedLandmark,
         latitude: _selectedLat,
@@ -261,12 +275,50 @@ class _AddressQuoteScreenState extends State<AddressQuoteScreen> {
                     child: TextFormField(
                       controller: _nameController,
                       decoration: const InputDecoration(
-                        labelText: 'Name (Optional)',
+                        labelText: 'Full Name *',
                         hintText: 'Your name',
                       ),
+                      validator: (val) {
+                        if (val == null || val.trim().isEmpty) {
+                          return 'Enter your full name';
+                        }
+                        return null;
+                      },
                     ),
                   ),
                 ],
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _emailController,
+                keyboardType: TextInputType.emailAddress,
+                decoration: const InputDecoration(
+                  labelText: 'Email Address * (For Tax Invoice)',
+                  prefixIcon: Icon(Icons.email_outlined, size: 18),
+                  hintText: 'name@domain.com',
+                ),
+                validator: (val) {
+                  if (val == null || val.trim().isEmpty) {
+                    return 'Email is compulsory for invoice delivery';
+                  }
+                  if (!RegExp(r'^\S+@\S+\.\S+$').hasMatch(val.trim())) {
+                    return 'Enter a valid email address';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 8),
+              CheckboxListTile(
+                contentPadding: EdgeInsets.zero,
+                dense: true,
+                activeColor: AppTheme.saffronDark,
+                value: _consentTransactionalEmail,
+                onChanged: (val) => setState(() => _consentTransactionalEmail = val ?? false),
+                title: const Text(
+                  'I consent to receive order updates & tax invoice via email upon completion.',
+                  style: TextStyle(fontSize: 12, color: AppTheme.cocoa),
+                ),
+                controlAffinity: ListTileControlAffinity.leading,
               ),
               const SizedBox(height: 20),
 

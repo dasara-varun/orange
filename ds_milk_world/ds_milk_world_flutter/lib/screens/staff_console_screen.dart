@@ -7,8 +7,13 @@ import '../services/mock_data.dart';
 
 class StaffConsoleScreen extends StatefulWidget {
   final VoidCallback onBackToStorefront;
+  final String? staffRole;
 
-  const StaffConsoleScreen({super.key, required this.onBackToStorefront});
+  const StaffConsoleScreen({
+    super.key,
+    required this.onBackToStorefront,
+    this.staffRole,
+  });
 
   @override
   State<StaffConsoleScreen> createState() => _StaffConsoleScreenState();
@@ -62,6 +67,9 @@ class _StaffConsoleScreenState extends State<StaffConsoleScreen> with SingleTick
   List<OrderRecord> _filterByStatus(String status) {
     if (status == 'new') {
       return _orders.where((o) => o.status == 'shop_acceptance_pending' || o.status == 'paid').toList();
+    }
+    if (status == 'delivered') {
+      return _orders.where((o) => o.status.toLowerCase() == 'delivered' || o.status.toLowerCase() == 'completed').toList();
     }
     return _orders.where((o) => o.status.toLowerCase() == status.toLowerCase()).toList();
   }
@@ -322,6 +330,20 @@ class _StaffConsoleScreenState extends State<StaffConsoleScreen> with SingleTick
   void _markDelivered(OrderRecord order) async {
     await ApiService.instance.markDelivered(order.orderNumber);
     _loadData();
+  }
+
+  // Action: Mark Completed -> Generates Tax Invoice & Triggers Email Outbox (Production Spec Sec 7 & 10)
+  void _markCompleted(OrderRecord order) async {
+    await ApiService.instance.completeOrder(order.orderNumber);
+    _loadData();
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Order #${order.orderNumber} completed. Tax invoice prepared & dispatched to email.'),
+          backgroundColor: AppTheme.mint,
+        ),
+      );
+    }
   }
 
   // Action: Print / View Kitchen Order Ticket (KOT)
@@ -639,6 +661,21 @@ class _StaffConsoleScreenState extends State<StaffConsoleScreen> with SingleTick
                 style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: AppTheme.cocoa),
               ),
             ),
+            if (widget.staffRole != null) ...[
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: AppTheme.cream,
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(color: AppTheme.border),
+                ),
+                child: Text(
+                  widget.staffRole!.replaceAll('_', ' ').toUpperCase(),
+                  style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: AppTheme.cocoa),
+                ),
+              ),
+            ],
           ],
         ),
         actions: [
@@ -849,17 +886,38 @@ class _StaffConsoleScreenState extends State<StaffConsoleScreen> with SingleTick
                         child: const Text('Mark as Delivered'),
                       ),
                     ] else ...[
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFE8F5E9),
-                          borderRadius: BorderRadius.circular(6),
+                      if (order.status == 'delivered')
+                        ElevatedButton.icon(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppTheme.cocoa,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                            minimumSize: Size.zero,
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          ),
+                          onPressed: () => _markCompleted(order),
+                          icon: const Icon(Icons.receipt_long, size: 14, color: AppTheme.cream),
+                          label: const Text('Complete & Dispatch Invoice', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+                        )
+                      else
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFE8F5E9),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.verified, size: 14, color: Color(0xFF2E7D32)),
+                              const SizedBox(width: 4),
+                              Text(
+                                order.invoiceId != null ? 'Completed (${order.invoiceId})' : 'Completed',
+                                style: const TextStyle(color: Color(0xFF2E7D32), fontWeight: FontWeight.w700, fontSize: 12),
+                              ),
+                            ],
+                          ),
                         ),
-                        child: const Text(
-                          'Delivered Successfully',
-                          style: TextStyle(color: Color(0xFF2E7D32), fontWeight: FontWeight.w700, fontSize: 12),
-                        ),
-                      ),
                     ],
                   ],
                 ),

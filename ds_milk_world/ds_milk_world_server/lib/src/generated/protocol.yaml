@@ -4,6 +4,8 @@ admin:
   - markReady:
   - assignDelivery:
   - markDelivered:
+  - completeOrder:
+  - authenticateStaff:
   - getDeliveryJob:
   - createRefund:
   - getOrderEvents:

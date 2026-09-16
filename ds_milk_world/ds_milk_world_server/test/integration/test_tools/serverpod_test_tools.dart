@@ -338,6 +338,68 @@ class _AdminEndpoint {
     });
   }
 
+  _i3.Future<_i4.OrderRecord?> completeOrder(
+    _i1.TestSessionBuilder sessionBuilder,
+    String orderNumber,
+  ) async {
+    return _i1.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _i1.InternalTestSessionBuilder).internalBuild(
+        endpoint: 'admin',
+        method: 'completeOrder',
+      );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'admin',
+          methodName: 'completeOrder',
+          parameters: _i1.testObjectToJson({'orderNumber': orderNumber}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _i3.Future<_i4.OrderRecord?>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _i3.Future<String?> authenticateStaff(
+    _i1.TestSessionBuilder sessionBuilder,
+    String username,
+    String password,
+  ) async {
+    return _i1.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _i1.InternalTestSessionBuilder).internalBuild(
+        endpoint: 'admin',
+        method: 'authenticateStaff',
+      );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'admin',
+          methodName: 'authenticateStaff',
+          parameters: _i1.testObjectToJson({
+            'username': username,
+            'password': password,
+          }),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _i3.Future<String?>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
   _i3.Future<_i5.DeliveryJob?> getDeliveryJob(
     _i1.TestSessionBuilder sessionBuilder,
     String orderNumber,
@@ -713,6 +775,7 @@ class _OrderEndpoint {
   _i3.Future<_i4.OrderRecord> createOrder(
     _i1.TestSessionBuilder sessionBuilder,
     String customerPhone,
+    String? customerEmail,
     String? customerName,
     String deliveryAddress,
     String? landmark,
@@ -733,6 +796,7 @@ class _OrderEndpoint {
           methodName: 'createOrder',
           parameters: _i1.testObjectToJson({
             'customerPhone': customerPhone,
+            'customerEmail': customerEmail,
             'customerName': customerName,
             'deliveryAddress': deliveryAddress,
             'landmark': landmark,

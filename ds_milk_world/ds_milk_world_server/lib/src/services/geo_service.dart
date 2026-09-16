@@ -2,8 +2,8 @@ import 'dart:math';
 
 class GeoService {
   // DS Milk World, Kanuru, Vijayawada
-  static const double outletLat = 16.4850;
-  static const double outletLng = 80.6900;
+  static const double outletLat = 16.4854333;
+  static const double outletLng = 80.6874703;
   static const double maxServiceRadiusKm = 5.0;
 
   /// Calculate distance in kilometers between two GPS coordinates using Haversine formula

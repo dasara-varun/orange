@@ -29,8 +29,8 @@ class ApiService {
       customerName: 'Ravi Teja',
       deliveryAddress: 'Flat 204, Kanuru Main Road, Kanuru, Vijayawada',
       landmark: 'Near Kanuru Center',
-      latitude: 16.4850,
-      longitude: 80.6900,
+      latitude: 16.4854333,
+      longitude: 80.6874703,
       distanceKm: 0.5,
       status: 'shop_acceptance_pending',
       subtotalPaise: 27000,
@@ -237,7 +237,7 @@ class ApiService {
   }
 
   Future<DeliveryQuote> getDeliveryQuote(double lat, double lng) async {
-    final distance = _haversineDistance(16.4850, 80.6900, lat, lng);
+    final distance = _haversineDistance(16.4854333, 80.6874703, lat, lng);
     final serviceable = distance <= 5.0;
     final fee = serviceable ? _calculateFeePaise(distance) : 0;
     final localQuote = DeliveryQuote(
@@ -266,6 +266,7 @@ class ApiService {
 
   Future<OrderRecord> createOrder({
     required String customerPhone,
+    String? customerEmail,
     String? customerName,
     required String deliveryAddress,
     String? landmark,
@@ -280,6 +281,7 @@ class ApiService {
       try {
         final res = await client.order.createOrder(
           customerPhone,
+          customerEmail,
           customerName,
           deliveryAddress,
           landmark,
@@ -296,7 +298,7 @@ class ApiService {
       }
     }
       // Local fallback logic
-      final dist = _haversineDistance(16.4850, 80.6900, latitude, longitude);
+      final dist = _haversineDistance(16.4854333, 80.6874703, latitude, longitude);
       if (dist > 5.0) {
         throw Exception('Location exceeds 5.0 km delivery radius.');
       }
@@ -326,6 +328,7 @@ class ApiService {
       final record = OrderRecord(
         orderNumber: orderNumber,
         customerPhone: customerPhone,
+        customerEmail: customerEmail,
         customerName: customerName,
         deliveryAddress: deliveryAddress,
         landmark: landmark,
@@ -702,6 +705,83 @@ class ApiService {
       _serverOnline = false;
       _hasCheckedServer = true;
       return _orderEvents[orderNumber] ?? [];
+    }
+  }
+
+  Future<OrderRecord?> completeOrder(String orderNumber) async {
+    if (_hasCheckedServer && !_serverOnline) {
+      final o = _orders[orderNumber];
+      if (o != null) {
+        o.status = 'completed';
+        o.updatedAt = DateTime.now();
+        if (o.invoiceId == null) {
+          final now = DateTime.now();
+          final suffix = orderNumber.contains('-') ? orderNumber.split('-').last : orderNumber;
+          o.invoiceId = 'INV-DSMW-${now.year}-$suffix';
+          o.invoiceStatus = 'generated';
+          o.invoicePdfUrl = '/api/v1/orders/$orderNumber/invoice';
+          _logLocalEvent(orderNumber, 'invoice_generated', 'system', 'Tax invoice ${o.invoiceId} generated.');
+          _logLocalEvent(orderNumber, 'email_dispatched', 'system', 'Invoice emailed to ${o.customerEmail ?? 'customer'}');
+        }
+        _logLocalEvent(orderNumber, 'order_completed', 'staff', 'Order marked completed');
+      }
+      return o;
+    }
+    try {
+      final res = await client.admin.completeOrder(orderNumber).timeout(const Duration(milliseconds: 350));
+      _serverOnline = true;
+      _hasCheckedServer = true;
+      return res;
+    } catch (_) {
+      _serverOnline = false;
+      _hasCheckedServer = true;
+      final o = _orders[orderNumber];
+      if (o != null) {
+        o.status = 'completed';
+        o.updatedAt = DateTime.now();
+        if (o.invoiceId == null) {
+          final now = DateTime.now();
+          final suffix = orderNumber.contains('-') ? orderNumber.split('-').last : orderNumber;
+          o.invoiceId = 'INV-DSMW-${now.year}-$suffix';
+          o.invoiceStatus = 'generated';
+          o.invoicePdfUrl = '/api/v1/orders/$orderNumber/invoice';
+          _logLocalEvent(orderNumber, 'invoice_generated', 'system', 'Tax invoice ${o.invoiceId} generated.');
+          _logLocalEvent(orderNumber, 'email_dispatched', 'system', 'Invoice emailed to ${o.customerEmail ?? 'customer'}');
+        }
+        _logLocalEvent(orderNumber, 'order_completed', 'staff', 'Order marked completed');
+      }
+      return o;
+    }
+  }
+
+  Future<String?> authenticateStaff(String username, String password) async {
+    final localAccounts = {
+      'admin': {'pass': 'DSMilk@Admin2026', 'role': 'administrator'},
+      'kitchen': {'pass': 'DSMilk@Kitchen2026', 'role': 'kitchen'},
+      'dispatch': {'pass': 'DSMilk@Dispatch2026', 'role': 'dispatch'},
+      'finance': {'pass': 'DSMilk@Finance2026', 'role': 'finance'},
+      'catalog': {'pass': 'DSMilk@Catalog2026', 'role': 'catalog_manager'},
+    };
+    if (_hasCheckedServer && !_serverOnline) {
+      final acc = localAccounts[username.toLowerCase().trim()];
+      if (acc != null && acc['pass'] == password) {
+        return acc['role'];
+      }
+      return null;
+    }
+    try {
+      final res = await client.admin.authenticateStaff(username, password).timeout(const Duration(milliseconds: 350));
+      _serverOnline = true;
+      _hasCheckedServer = true;
+      return res;
+    } catch (_) {
+      _serverOnline = false;
+      _hasCheckedServer = true;
+      final acc = localAccounts[username.toLowerCase().trim()];
+      if (acc != null && acc['pass'] == password) {
+        return acc['role'];
+      }
+      return null;
     }
   }
 

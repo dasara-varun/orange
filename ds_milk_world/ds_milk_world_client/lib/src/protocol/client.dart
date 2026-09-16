@@ -91,6 +91,26 @@ class EndpointAdmin extends _i1.EndpointRef {
         {'orderNumber': orderNumber},
       );
 
+  _i2.Future<_i3.OrderRecord?> completeOrder(String orderNumber) =>
+      caller.callServerEndpoint<_i3.OrderRecord?>(
+        'admin',
+        'completeOrder',
+        {'orderNumber': orderNumber},
+      );
+
+  _i2.Future<String?> authenticateStaff(
+    String username,
+    String password,
+  ) =>
+      caller.callServerEndpoint<String?>(
+        'admin',
+        'authenticateStaff',
+        {
+          'username': username,
+          'password': password,
+        },
+      );
+
   _i2.Future<_i4.DeliveryJob?> getDeliveryJob(String orderNumber) =>
       caller.callServerEndpoint<_i4.DeliveryJob?>(
         'admin',
@@ -245,6 +265,7 @@ class EndpointOrder extends _i1.EndpointRef {
 
   _i2.Future<_i3.OrderRecord> createOrder(
     String customerPhone,
+    String? customerEmail,
     String? customerName,
     String deliveryAddress,
     String? landmark,
@@ -257,6 +278,7 @@ class EndpointOrder extends _i1.EndpointRef {
         'createOrder',
         {
           'customerPhone': customerPhone,
+          'customerEmail': customerEmail,
           'customerName': customerName,
           'deliveryAddress': deliveryAddress,
           'landmark': landmark,

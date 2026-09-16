@@ -49,8 +49,8 @@ class MapLocation {
 
 class _InteractiveMapPickerState extends State<InteractiveMapPicker> {
   // Outlet coordinates (Kanuru Counter)
-  static const double outletLat = 16.4850;
-  static const double outletLng = 80.6900;
+  static const double outletLat = 16.4854333;
+  static const double outletLng = 80.6874703;
   static const double maxRadiusKm = 5.0;
 
   // Vijayawada geographic bounds for fallback clamping
@@ -74,7 +74,7 @@ class _InteractiveMapPickerState extends State<InteractiveMapPicker> {
 
   // Key Vijayawada landmarks for rapid reference around Kanuru
   final List<Map<String, dynamic>> _landmarks = [
-    {'name': 'Kanuru Center', 'lat': 16.4850, 'lng': 80.6900, 'sub': 'Outlet Location'},
+    {'name': 'Kanuru Center', 'lat': 16.4854333, 'lng': 80.6874703, 'sub': 'Outlet Location'},
     {'name': 'Tadigadapa', 'lat': 16.4800, 'lng': 80.6800, 'sub': '1.2 km'},
     {'name': 'Poranki', 'lat': 16.4780, 'lng': 80.7050, 'sub': '1.8 km'},
     {'name': 'Auto Nagar Gate', 'lat': 16.4950, 'lng': 80.6650, 'sub': '2.9 km'},

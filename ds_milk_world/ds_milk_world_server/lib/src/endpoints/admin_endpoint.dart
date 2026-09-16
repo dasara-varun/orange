@@ -61,6 +61,32 @@ class AdminEndpoint extends Endpoint {
     return OrderService.markDelivered(orderNumber);
   }
 
+  Future<OrderRecord?> completeOrder(
+    Session session,
+    String orderNumber,
+  ) async {
+    return OrderService.completeOrder(orderNumber);
+  }
+
+  Future<String?> authenticateStaff(
+    Session session,
+    String username,
+    String password,
+  ) async {
+    final accounts = {
+      'admin': {'pass': 'DSMilk@Admin2026', 'role': 'administrator'},
+      'kitchen': {'pass': 'DSMilk@Kitchen2026', 'role': 'kitchen'},
+      'dispatch': {'pass': 'DSMilk@Dispatch2026', 'role': 'dispatch'},
+      'finance': {'pass': 'DSMilk@Finance2026', 'role': 'finance'},
+      'catalog': {'pass': 'DSMilk@Catalog2026', 'role': 'catalog_manager'},
+    };
+    final user = accounts[username.toLowerCase().trim()];
+    if (user != null && user['pass'] == password) {
+      return user['role'];
+    }
+    return null;
+  }
+
   Future<DeliveryJob?> getDeliveryJob(
     Session session,
     String orderNumber,

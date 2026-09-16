@@ -87,6 +87,7 @@ void main() {
 
       final order = OrderService.createOrder(
         customerPhone: '+91 9876543210',
+        customerEmail: 'ravi.teja@example.com',
         customerName: 'Ravi Teja',
         deliveryAddress: 'Flat 402, Lotus Towers, Kanuru, Vijayawada',
         landmark: 'Opposite Water Tank',
@@ -134,10 +135,11 @@ void main() {
       );
     });
 
-    test('Full End-to-End State Machine: Order -> Payment -> Acceptance -> Ready -> Dispatch -> Delivery', () {
+    test('Full End-to-End State Machine: Order -> Payment -> Acceptance -> Ready -> Dispatch -> Delivery -> Completion Invoicing', () {
       // 1. Create order
       final order = OrderService.createOrder(
         customerPhone: '+91 9123456780',
+        customerEmail: 'ananya.rao@example.com',
         customerName: 'Ananya Rao',
         deliveryAddress: 'House 12, Road 4, Auto Nagar',
         latitude: 16.4970,
@@ -219,9 +221,17 @@ void main() {
       final deliveredOrder = OrderService.markDelivered(orderNum);
       expect(deliveredOrder.status, equals('delivered'));
 
-      // 9. Verify event audit trail
+      // 9. Completion-triggered Tax Invoicing (Production Spec v3 Section 7)
+      final completedOrder = OrderService.completeOrder(orderNum);
+      expect(completedOrder.status, equals('completed'));
+      expect(completedOrder.invoiceId, isNotNull);
+      expect(completedOrder.invoiceId!.startsWith('INV-DSMW-'), isTrue);
+      expect(completedOrder.invoiceStatus, equals('generated'));
+      expect(completedOrder.invoicePdfUrl, equals('/api/v1/orders/$orderNum/invoice'));
+
+      // 10. Verify event audit trail
       final events = OrderService.getOrderEvents(orderNum);
-      expect(events.length, greaterThanOrEqualTo(6));
+      expect(events.length, greaterThanOrEqualTo(8));
       final eventTypes = events.map((e) => e.type).toList();
       expect(eventTypes, contains('order_created'));
       expect(eventTypes, contains('payment_successful'));
@@ -230,11 +240,14 @@ void main() {
       expect(eventTypes, contains('order_ready'));
       expect(eventTypes, contains('delivery_dispatched'));
       expect(eventTypes, contains('order_delivered'));
+      expect(eventTypes, contains('invoice_generated'));
+      expect(eventTypes, contains('order_completed'));
     });
 
     test('Staff rejection triggers auto-refund creation', () {
       final order = OrderService.createOrder(
         customerPhone: '+91 9123456781',
+        customerEmail: 'kalyan@example.com',
         customerName: 'Kalyan',
         deliveryAddress: 'Shop 5, Auto Nagar Commercial Area',
         latitude: 16.4960,
@@ -282,6 +295,7 @@ void main() {
     test('Customer cancellation before prep triggers auto-refund and blocks late cancellation', () {
       final order = OrderService.createOrder(
         customerPhone: '+91 9900011223',
+        customerEmail: 'pooja@example.com',
         customerName: 'Pooja',
         deliveryAddress: 'Road 2, Auto Nagar',
         latitude: 16.4955,
@@ -326,6 +340,7 @@ void main() {
       // Attempting to cancel an order already preparing throws StateError
       final order2 = OrderService.createOrder(
         customerPhone: '+91 9900011224',
+        customerEmail: 'pooja.work@example.com',
         deliveryAddress: 'Road 3, Auto Nagar',
         latitude: 16.4955,
         longitude: 80.6655,
@@ -363,6 +378,7 @@ void main() {
     test('Delivery webhook updates rider details and transitions order status', () {
       final order = OrderService.createOrder(
         customerPhone: '+91 9888877777',
+        customerEmail: 'rider.test@example.com',
         deliveryAddress: 'Plot 10, Auto Nagar',
         latitude: 16.4960,
         longitude: 80.6660,

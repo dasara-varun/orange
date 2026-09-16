@@ -18,6 +18,7 @@ abstract class OrderRecord
     this.id,
     required this.orderNumber,
     required this.customerPhone,
+    this.customerEmail,
     this.customerName,
     required this.deliveryAddress,
     this.landmark,
@@ -33,6 +34,9 @@ abstract class OrderRecord
     this.prepTimeMinutes,
     this.rejectionReason,
     required this.packingChecklistConfirmed,
+    this.invoiceId,
+    this.invoicePdfUrl,
+    this.invoiceStatus,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -41,6 +45,7 @@ abstract class OrderRecord
     int? id,
     required String orderNumber,
     required String customerPhone,
+    String? customerEmail,
     String? customerName,
     required String deliveryAddress,
     String? landmark,
@@ -56,6 +61,9 @@ abstract class OrderRecord
     int? prepTimeMinutes,
     String? rejectionReason,
     required bool packingChecklistConfirmed,
+    String? invoiceId,
+    String? invoicePdfUrl,
+    String? invoiceStatus,
     required DateTime createdAt,
     required DateTime updatedAt,
   }) = _OrderRecordImpl;
@@ -65,6 +73,7 @@ abstract class OrderRecord
       id: jsonSerialization['id'] as int?,
       orderNumber: jsonSerialization['orderNumber'] as String,
       customerPhone: jsonSerialization['customerPhone'] as String,
+      customerEmail: jsonSerialization['customerEmail'] as String?,
       customerName: jsonSerialization['customerName'] as String?,
       deliveryAddress: jsonSerialization['deliveryAddress'] as String,
       landmark: jsonSerialization['landmark'] as String?,
@@ -83,6 +92,9 @@ abstract class OrderRecord
       rejectionReason: jsonSerialization['rejectionReason'] as String?,
       packingChecklistConfirmed:
           jsonSerialization['packingChecklistConfirmed'] as bool,
+      invoiceId: jsonSerialization['invoiceId'] as String?,
+      invoicePdfUrl: jsonSerialization['invoicePdfUrl'] as String?,
+      invoiceStatus: jsonSerialization['invoiceStatus'] as String?,
       createdAt:
           _i1.DateTimeJsonExtension.fromJson(jsonSerialization['createdAt']),
       updatedAt:
@@ -100,6 +112,8 @@ abstract class OrderRecord
   String orderNumber;
 
   String customerPhone;
+
+  String? customerEmail;
 
   String? customerName;
 
@@ -131,6 +145,12 @@ abstract class OrderRecord
 
   bool packingChecklistConfirmed;
 
+  String? invoiceId;
+
+  String? invoicePdfUrl;
+
+  String? invoiceStatus;
+
   DateTime createdAt;
 
   DateTime updatedAt;
@@ -145,6 +165,7 @@ abstract class OrderRecord
     int? id,
     String? orderNumber,
     String? customerPhone,
+    String? customerEmail,
     String? customerName,
     String? deliveryAddress,
     String? landmark,
@@ -160,6 +181,9 @@ abstract class OrderRecord
     int? prepTimeMinutes,
     String? rejectionReason,
     bool? packingChecklistConfirmed,
+    String? invoiceId,
+    String? invoicePdfUrl,
+    String? invoiceStatus,
     DateTime? createdAt,
     DateTime? updatedAt,
   });
@@ -169,6 +193,7 @@ abstract class OrderRecord
       if (id != null) 'id': id,
       'orderNumber': orderNumber,
       'customerPhone': customerPhone,
+      if (customerEmail != null) 'customerEmail': customerEmail,
       if (customerName != null) 'customerName': customerName,
       'deliveryAddress': deliveryAddress,
       if (landmark != null) 'landmark': landmark,
@@ -184,6 +209,9 @@ abstract class OrderRecord
       if (prepTimeMinutes != null) 'prepTimeMinutes': prepTimeMinutes,
       if (rejectionReason != null) 'rejectionReason': rejectionReason,
       'packingChecklistConfirmed': packingChecklistConfirmed,
+      if (invoiceId != null) 'invoiceId': invoiceId,
+      if (invoicePdfUrl != null) 'invoicePdfUrl': invoicePdfUrl,
+      if (invoiceStatus != null) 'invoiceStatus': invoiceStatus,
       'createdAt': createdAt.toJson(),
       'updatedAt': updatedAt.toJson(),
     };
@@ -195,6 +223,7 @@ abstract class OrderRecord
       if (id != null) 'id': id,
       'orderNumber': orderNumber,
       'customerPhone': customerPhone,
+      if (customerEmail != null) 'customerEmail': customerEmail,
       if (customerName != null) 'customerName': customerName,
       'deliveryAddress': deliveryAddress,
       if (landmark != null) 'landmark': landmark,
@@ -210,6 +239,9 @@ abstract class OrderRecord
       if (prepTimeMinutes != null) 'prepTimeMinutes': prepTimeMinutes,
       if (rejectionReason != null) 'rejectionReason': rejectionReason,
       'packingChecklistConfirmed': packingChecklistConfirmed,
+      if (invoiceId != null) 'invoiceId': invoiceId,
+      if (invoicePdfUrl != null) 'invoicePdfUrl': invoicePdfUrl,
+      if (invoiceStatus != null) 'invoiceStatus': invoiceStatus,
       'createdAt': createdAt.toJson(),
       'updatedAt': updatedAt.toJson(),
     };
@@ -252,6 +284,7 @@ class _OrderRecordImpl extends OrderRecord {
     int? id,
     required String orderNumber,
     required String customerPhone,
+    String? customerEmail,
     String? customerName,
     required String deliveryAddress,
     String? landmark,
@@ -267,12 +300,16 @@ class _OrderRecordImpl extends OrderRecord {
     int? prepTimeMinutes,
     String? rejectionReason,
     required bool packingChecklistConfirmed,
+    String? invoiceId,
+    String? invoicePdfUrl,
+    String? invoiceStatus,
     required DateTime createdAt,
     required DateTime updatedAt,
   }) : super._(
           id: id,
           orderNumber: orderNumber,
           customerPhone: customerPhone,
+          customerEmail: customerEmail,
           customerName: customerName,
           deliveryAddress: deliveryAddress,
           landmark: landmark,
@@ -288,6 +325,9 @@ class _OrderRecordImpl extends OrderRecord {
           prepTimeMinutes: prepTimeMinutes,
           rejectionReason: rejectionReason,
           packingChecklistConfirmed: packingChecklistConfirmed,
+          invoiceId: invoiceId,
+          invoicePdfUrl: invoicePdfUrl,
+          invoiceStatus: invoiceStatus,
           createdAt: createdAt,
           updatedAt: updatedAt,
         );
@@ -300,6 +340,7 @@ class _OrderRecordImpl extends OrderRecord {
     Object? id = _Undefined,
     String? orderNumber,
     String? customerPhone,
+    Object? customerEmail = _Undefined,
     Object? customerName = _Undefined,
     String? deliveryAddress,
     Object? landmark = _Undefined,
@@ -315,6 +356,9 @@ class _OrderRecordImpl extends OrderRecord {
     Object? prepTimeMinutes = _Undefined,
     Object? rejectionReason = _Undefined,
     bool? packingChecklistConfirmed,
+    Object? invoiceId = _Undefined,
+    Object? invoicePdfUrl = _Undefined,
+    Object? invoiceStatus = _Undefined,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -322,6 +366,8 @@ class _OrderRecordImpl extends OrderRecord {
       id: id is int? ? id : this.id,
       orderNumber: orderNumber ?? this.orderNumber,
       customerPhone: customerPhone ?? this.customerPhone,
+      customerEmail:
+          customerEmail is String? ? customerEmail : this.customerEmail,
       customerName: customerName is String? ? customerName : this.customerName,
       deliveryAddress: deliveryAddress ?? this.deliveryAddress,
       landmark: landmark is String? ? landmark : this.landmark,
@@ -340,6 +386,11 @@ class _OrderRecordImpl extends OrderRecord {
           rejectionReason is String? ? rejectionReason : this.rejectionReason,
       packingChecklistConfirmed:
           packingChecklistConfirmed ?? this.packingChecklistConfirmed,
+      invoiceId: invoiceId is String? ? invoiceId : this.invoiceId,
+      invoicePdfUrl:
+          invoicePdfUrl is String? ? invoicePdfUrl : this.invoicePdfUrl,
+      invoiceStatus:
+          invoiceStatus is String? ? invoiceStatus : this.invoiceStatus,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
@@ -354,6 +405,10 @@ class OrderRecordTable extends _i1.Table<int?> {
     );
     customerPhone = _i1.ColumnString(
       'customerPhone',
+      this,
+    );
+    customerEmail = _i1.ColumnString(
+      'customerEmail',
       this,
     );
     customerName = _i1.ColumnString(
@@ -416,6 +471,18 @@ class OrderRecordTable extends _i1.Table<int?> {
       'packingChecklistConfirmed',
       this,
     );
+    invoiceId = _i1.ColumnString(
+      'invoiceId',
+      this,
+    );
+    invoicePdfUrl = _i1.ColumnString(
+      'invoicePdfUrl',
+      this,
+    );
+    invoiceStatus = _i1.ColumnString(
+      'invoiceStatus',
+      this,
+    );
     createdAt = _i1.ColumnDateTime(
       'createdAt',
       this,
@@ -429,6 +496,8 @@ class OrderRecordTable extends _i1.Table<int?> {
   late final _i1.ColumnString orderNumber;
 
   late final _i1.ColumnString customerPhone;
+
+  late final _i1.ColumnString customerEmail;
 
   late final _i1.ColumnString customerName;
 
@@ -460,6 +529,12 @@ class OrderRecordTable extends _i1.Table<int?> {
 
   late final _i1.ColumnBool packingChecklistConfirmed;
 
+  late final _i1.ColumnString invoiceId;
+
+  late final _i1.ColumnString invoicePdfUrl;
+
+  late final _i1.ColumnString invoiceStatus;
+
   late final _i1.ColumnDateTime createdAt;
 
   late final _i1.ColumnDateTime updatedAt;
@@ -469,6 +544,7 @@ class OrderRecordTable extends _i1.Table<int?> {
         id,
         orderNumber,
         customerPhone,
+        customerEmail,
         customerName,
         deliveryAddress,
         landmark,
@@ -484,6 +560,9 @@ class OrderRecordTable extends _i1.Table<int?> {
         prepTimeMinutes,
         rejectionReason,
         packingChecklistConfirmed,
+        invoiceId,
+        invoicePdfUrl,
+        invoiceStatus,
         createdAt,
         updatedAt,
       ];
