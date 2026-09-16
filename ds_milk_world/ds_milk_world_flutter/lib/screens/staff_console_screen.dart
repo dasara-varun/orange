@@ -704,48 +704,53 @@ class _StaffConsoleScreenState extends State<StaffConsoleScreen> with SingleTick
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator(color: AppTheme.saffron))
-          : Column(
-              children: [
-                if (newOrders.isNotEmpty)
-                  InkWell(
-                    onTap: () => _tabController.animateTo(0),
-                    child: Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                      color: AppTheme.saffron,
-                      child: Row(
+          : Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 1080),
+                child: Column(
+                  children: [
+                    if (newOrders.isNotEmpty)
+                      InkWell(
+                        onTap: () => _tabController.animateTo(0),
+                        child: Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                          color: AppTheme.saffron,
+                          child: Row(
+                            children: [
+                              const Icon(Icons.notifications_active, size: 18, color: AppTheme.cocoa),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  'ACTION REQUIRED: ${newOrders.length} new paid order(s) awaiting shop acceptance!',
+                                  style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13, color: AppTheme.cocoa),
+                                ),
+                              ),
+                              const Text(
+                                'Review Now →',
+                                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12, color: AppTheme.cocoa),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    Expanded(
+                      child: TabBarView(
+                        controller: _tabController,
                         children: [
-                          const Icon(Icons.notifications_active, size: 18, color: AppTheme.cocoa),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              'ACTION REQUIRED: ${newOrders.length} new paid order(s) awaiting shop acceptance!',
-                              style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13, color: AppTheme.cocoa),
-                            ),
-                          ),
-                          const Text(
-                            'Review Now →',
-                            style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12, color: AppTheme.cocoa),
-                          ),
+                          _buildOrderList(newOrders, 'new'),
+                          _buildOrderList(prepOrders, 'preparing'),
+                          _buildOrderList(readyOrders, 'ready_for_pickup'),
+                          _buildOrderList(outOrders, 'out_for_delivery'),
+                          _buildOrderList(doneOrders, 'delivered'),
+                          _buildCatalogTab(),
+                          _buildReportsTab(),
                         ],
                       ),
                     ),
-                  ),
-                Expanded(
-                  child: TabBarView(
-                    controller: _tabController,
-                    children: [
-                      _buildOrderList(newOrders, 'new'),
-                      _buildOrderList(prepOrders, 'preparing'),
-                      _buildOrderList(readyOrders, 'ready_for_pickup'),
-                      _buildOrderList(outOrders, 'out_for_delivery'),
-                      _buildOrderList(doneOrders, 'delivered'),
-                      _buildCatalogTab(),
-                      _buildReportsTab(),
-                    ],
-                  ),
+                  ],
                 ),
-              ],
+              ),
             ),
     );
   }

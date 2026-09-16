@@ -191,13 +191,16 @@ class _AddressQuoteScreenState extends State<AddressQuoteScreen> {
       appBar: AppBar(
         title: const Text('Delivery & Address'),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 680),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
               // Outlet and radius context
               Container(
                 padding: const EdgeInsets.all(12),
@@ -604,6 +607,8 @@ class _AddressQuoteScreenState extends State<AddressQuoteScreen> {
           ),
         ),
       ),
-    );
+    ),
+  ),
+);
   }
 }

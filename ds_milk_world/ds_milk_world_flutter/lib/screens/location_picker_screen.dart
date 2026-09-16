@@ -421,9 +421,13 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
             top: 12,
             left: 14,
             right: 14,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
+            child: Align(
+              alignment: Alignment.topCenter,
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 600),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
                 Material(
                   elevation: 4,
                   borderRadius: BorderRadius.circular(10),
@@ -483,6 +487,8 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
               ],
             ),
           ),
+        ),
+      ),
 
           // Fixed Center Delivery Target Pin with Live Indicator
           Center(
@@ -570,15 +576,19 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
             left: 0,
             right: 0,
             bottom: 0,
-            child: Container(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 20),
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-                boxShadow: [
-                  BoxShadow(color: Colors.black12, blurRadius: 16, offset: Offset(0, -4)),
-                ],
-              ),
+            child: Align(
+              alignment: Alignment.bottomCenter,
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 680),
+                child: Container(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 20),
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                    boxShadow: [
+                      BoxShadow(color: Colors.black12, blurRadius: 16, offset: Offset(0, -4)),
+                    ],
+                  ),
               child: SafeArea(
                 top: false,
                 child: Column(
@@ -673,7 +683,9 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
               ),
             ),
           ),
-        ],
+        ),
+      ),
+    ],
       ),
     );
   }
