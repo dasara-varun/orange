@@ -6,107 +6,18 @@ import 'mock_data.dart';
 class ApiService {
   static final ApiService instance = ApiService._();
 
-  ApiService._() {
-    _initSampleOrders();
-  }
+  ApiService._();
 
   // Server reachability circuit breaker
   bool _serverOnline = false;
   bool _hasCheckedServer = false;
   DateTime? _lastServerCheck;
 
-  // In-memory fallback stores
+  // In-memory fallback stores (clean production state: no filler orders)
   final Map<String, OrderRecord> _orders = {};
   final Map<String, List<OrderEvent>> _orderEvents = {};
   final Map<String, DeliveryJob> _deliveryJobs = {};
   int _orderSeq = 1001;
-
-  void _initSampleOrders() {
-    final now = DateTime.now();
-    final sample1 = OrderRecord(
-      orderNumber: 'DSMW-${now.year}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}-101',
-      customerPhone: '+91 98765 43210',
-      customerName: 'Ravi Teja',
-      deliveryAddress: 'Flat 204, Kanuru Main Road, Kanuru, Vijayawada',
-      landmark: 'Near Kanuru Center',
-      latitude: 16.4854333,
-      longitude: 80.6874703,
-      distanceKm: 0.5,
-      status: 'shop_acceptance_pending',
-      subtotalPaise: 27000,
-      deliveryFeePaise: 3000,
-      totalPaise: 30000,
-      currency: 'INR',
-      items: [
-        OrderItem(
-          productSku: 'DSMW-FAL-05',
-          nameSnapshot: 'Oreo Falooda',
-          unitPricePaise: 9000,
-          quantity: 2,
-          optionsSnapshot: 'Extra nuts',
-          subtotalPaise: 18000,
-        ),
-        OrderItem(
-          productSku: 'DSMW-FAL-01',
-          nameSnapshot: 'Rose Falooda',
-          unitPricePaise: 9000,
-          quantity: 1,
-          optionsSnapshot: null,
-          subtotalPaise: 9000,
-        ),
-      ],
-      prepTimeMinutes: null,
-      rejectionReason: null,
-      packingChecklistConfirmed: false,
-      createdAt: now.subtract(const Duration(minutes: 5)),
-      updatedAt: now.subtract(const Duration(minutes: 5)),
-    );
-
-    final sample2 = OrderRecord(
-      orderNumber: 'DSMW-${now.year}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}-102',
-      customerPhone: '+91 91234 56789',
-      customerName: 'Priya Sharma',
-      deliveryAddress: 'House 12, Tadigadapa Donka Road, Vijayawada',
-      landmark: 'Opposite State Bank',
-      latitude: 16.4800,
-      longitude: 80.6800,
-      distanceKm: 1.2,
-      status: 'preparing',
-      subtotalPaise: 16000,
-      deliveryFeePaise: 3000,
-      totalPaise: 19000,
-      currency: 'INR',
-      items: [
-        OrderItem(
-          productSku: 'DSMW-THICK-01',
-          nameSnapshot: 'KitKat Thick Shake',
-          unitPricePaise: 10000,
-          quantity: 1,
-          optionsSnapshot: 'Less ice',
-          subtotalPaise: 10000,
-        ),
-        OrderItem(
-          productSku: 'DSMW-BM-01-300',
-          nameSnapshot: 'Masala Butter Milk',
-          unitPricePaise: 2000,
-          quantity: 3,
-          optionsSnapshot: null,
-          subtotalPaise: 6000,
-        ),
-      ],
-      prepTimeMinutes: 20,
-      rejectionReason: null,
-      packingChecklistConfirmed: false,
-      createdAt: now.subtract(const Duration(minutes: 18)),
-      updatedAt: now.subtract(const Duration(minutes: 12)),
-    );
-
-    _orders[sample1.orderNumber] = sample1;
-    _orders[sample2.orderNumber] = sample2;
-    _logLocalEvent(sample1.orderNumber, 'payment_successful', 'payment_gateway', 'Payment verified');
-    _logLocalEvent(sample1.orderNumber, 'shop_acceptance_pending', 'system', 'Queued for shop review');
-    _logLocalEvent(sample2.orderNumber, 'order_accepted', 'staff', 'Accepted with prep time 20 mins');
-  }
 
   List<OrderRecord> getInitialOrders() {
     return _orders.values.toList()..sort((a, b) => b.createdAt.compareTo(a.createdAt));

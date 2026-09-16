@@ -15,58 +15,15 @@ class AddressQuoteScreen extends StatefulWidget {
 
 class _AddressQuoteScreenState extends State<AddressQuoteScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _phoneController = TextEditingController(text: '9876543210');
-  final _nameController = TextEditingController(text: 'Ravi Teja');
-  final _emailController = TextEditingController(text: 'ravi.teja@gmail.com');
-  final _addressController = TextEditingController(text: 'Flat 204, Kanuru Main Road, Kanuru, Vijayawada');
-  final _landmarkController = TextEditingController(text: 'Near Kanuru Center');
+  final _phoneController = TextEditingController();
+  final _nameController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _addressController = TextEditingController();
+  final _landmarkController = TextEditingController();
 
   bool _consentTransactionalEmail = true;
 
-  // Interactive Map Pin toggle
-  bool _useMapPicker = true;
-
-  // Pre-configured coordinate presets in Vijayawada for testing & ease of use
-  final List<Map<String, dynamic>> _locationPresets = [
-    {
-      'name': 'Kanuru (0.5 km)',
-      'lat': 16.4854333,
-      'lng': 80.6874703,
-      'address': 'Flat 204, Kanuru Main Road, Kanuru, Vijayawada',
-    },
-    {
-      'name': 'Tadigadapa (1.2 km)',
-      'lat': 16.4800,
-      'lng': 80.6800,
-      'address': 'Tadigadapa Donka Road, Vijayawada',
-    },
-    {
-      'name': 'Poranki (1.8 km)',
-      'lat': 16.4780,
-      'lng': 80.7050,
-      'address': 'Poranki Center, Bandar Road, Vijayawada',
-    },
-    {
-      'name': 'Auto Nagar (2.9 km)',
-      'lat': 16.4950,
-      'lng': 80.6650,
-      'address': 'Plot 45, Industrial Estate, Auto Nagar, Vijayawada',
-    },
-    {
-      'name': 'Benz Circle (4.9 km)',
-      'lat': 16.5000,
-      'lng': 80.6400,
-      'address': 'MG Road, Near Benz Circle, Vijayawada',
-    },
-    {
-      'name': 'Gannavaram Airport (14.5 km - Out of service)',
-      'lat': 16.5300,
-      'lng': 80.7900,
-      'address': 'Airport Road, Gannavaram',
-    },
-  ];
-
-  int _selectedPresetIndex = 0;
+  // Initial map center at Kanuru store
   double _selectedLat = 16.4854333;
   double _selectedLng = 80.6874703;
 
@@ -121,15 +78,6 @@ class _AddressQuoteScreenState extends State<AddressQuoteScreen> {
     }
   }
 
-  void _onPresetChanged(int index) {
-    setState(() {
-      _selectedPresetIndex = index;
-      _selectedLat = _locationPresets[index]['lat'] as double;
-      _selectedLng = _locationPresets[index]['lng'] as double;
-      _addressController.text = _locationPresets[index]['address'] as String;
-    });
-    _fetchQuote();
-  }
 
   Future<void> _handleProceed() async {
     if (!_formKey.currentState!.validate()) return;
@@ -324,100 +272,23 @@ class _AddressQuoteScreenState extends State<AddressQuoteScreen> {
 
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
+                children: const [
+                  Text(
                     'Delivery Location Pin',
                     style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: AppTheme.cocoa),
                   ),
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      InkWell(
-                        onTap: () => setState(() => _useMapPicker = true),
-                        borderRadius: BorderRadius.circular(6),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                          decoration: BoxDecoration(
-                            color: _useMapPicker ? AppTheme.cream : Colors.grey[100],
-                            borderRadius: BorderRadius.circular(6),
-                            border: Border.all(color: _useMapPicker ? AppTheme.saffronDark : AppTheme.border),
-                          ),
-                          child: const Row(
-                            children: [
-                              Icon(Icons.map, size: 14, color: AppTheme.cocoa),
-                              SizedBox(width: 4),
-                              Text('Map Pin', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.cocoa)),
-                            ],
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 6),
-                      InkWell(
-                        onTap: () => setState(() => _useMapPicker = false),
-                        borderRadius: BorderRadius.circular(6),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                          decoration: BoxDecoration(
-                            color: !_useMapPicker ? AppTheme.cream : Colors.grey[100],
-                            borderRadius: BorderRadius.circular(6),
-                            border: Border.all(color: !_useMapPicker ? AppTheme.saffronDark : AppTheme.border),
-                          ),
-                          child: const Row(
-                            children: [
-                              Icon(Icons.list, size: 14, color: AppTheme.cocoa),
-                              SizedBox(width: 4),
-                              Text('Presets', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.cocoa)),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
+                  Text(
+                    'Drag pin or tap map to set location',
+                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppTheme.muted),
                   ),
                 ],
               ),
               const SizedBox(height: 10),
-              if (_useMapPicker)
-                InteractiveMapPicker(
-                  initialLat: _selectedLat,
-                  initialLng: _selectedLng,
-                  onLocationChanged: _onMapLocationChanged,
-                )
-              else ...[
-                Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: AppTheme.border),
-                  ),
-                  child: Column(
-                    children: List.generate(_locationPresets.length, (idx) {
-                      final preset = _locationPresets[idx];
-                      final isSel = _selectedPresetIndex == idx;
-                      return RadioListTile<int>(
-                        value: idx,
-                        groupValue: _selectedPresetIndex,
-                        activeColor: AppTheme.saffronDark,
-                        dense: true,
-                        title: Text(
-                          preset['name'] as String,
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: isSel ? FontWeight.w700 : FontWeight.w500,
-                            color: AppTheme.cocoa,
-                          ),
-                        ),
-                        subtitle: Text(
-                          'Coordinates: ${preset['lat']}, ${preset['lng']}',
-                          style: const TextStyle(fontSize: 11, color: AppTheme.muted),
-                        ),
-                        onChanged: (val) {
-                          if (val != null) _onPresetChanged(val);
-                        },
-                      );
-                    }),
-                  ),
-                ),
-              ],
+              InteractiveMapPicker(
+                initialLat: _selectedLat,
+                initialLng: _selectedLng,
+                onLocationChanged: _onMapLocationChanged,
+              ),
               const SizedBox(height: 16),
 
               TextFormField(

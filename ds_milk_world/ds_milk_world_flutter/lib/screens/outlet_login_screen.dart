@@ -132,13 +132,6 @@ class _OutletLoginScreenState extends State<OutletLoginScreen> with SingleTicker
     );
   }
 
-  void _selectPresetRole(String user, String pass) {
-    setState(() {
-      _usernameController.text = user;
-      _passwordController.text = pass;
-      _errorMessage = null;
-    });
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -240,7 +233,7 @@ class _OutletLoginScreenState extends State<OutletLoginScreen> with SingleTicker
                   const SizedBox(height: 16),
 
                   SizedBox(
-                    height: 390,
+                    height: 320,
                     child: TabBarView(
                       controller: _authTabController,
                       children: [
@@ -291,24 +284,7 @@ class _OutletLoginScreenState extends State<OutletLoginScreen> with SingleTicker
             contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
           ),
         ),
-        const SizedBox(height: 12),
-        const Text(
-          'Quick Role Select (Development / Counter Presets):',
-          style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppTheme.muted),
-        ),
-        const SizedBox(height: 6),
-        Wrap(
-          spacing: 6,
-          runSpacing: 6,
-          children: [
-            _roleChip('Kitchen', 'kitchen', 'DSMilk@Kitchen2026'),
-            _roleChip('Dispatch', 'dispatch', 'DSMilk@Dispatch2026'),
-            _roleChip('Finance', 'finance', 'DSMilk@Finance2026'),
-            _roleChip('Catalog', 'catalog', 'DSMilk@Catalog2026'),
-            _roleChip('Admin', 'admin', 'DSMilk@Admin2026'),
-          ],
-        ),
-        const Spacer(),
+        const SizedBox(height: 24),
         SizedBox(
           height: 48,
           child: ElevatedButton.icon(
@@ -328,30 +304,6 @@ class _OutletLoginScreenState extends State<OutletLoginScreen> with SingleTicker
           ),
         ),
       ],
-    );
-  }
-
-  Widget _roleChip(String label, String user, String pass) {
-    final isSel = _usernameController.text == user;
-    return InkWell(
-      onTap: () => _selectPresetRole(user, pass),
-      borderRadius: BorderRadius.circular(6),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
-        decoration: BoxDecoration(
-          color: isSel ? AppTheme.saffron : AppTheme.cream,
-          borderRadius: BorderRadius.circular(6),
-          border: Border.all(color: isSel ? AppTheme.saffronDark : AppTheme.border),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 11,
-            fontWeight: isSel ? FontWeight.w800 : FontWeight.w600,
-            color: AppTheme.cocoa,
-          ),
-        ),
-      ),
     );
   }
 
@@ -400,26 +352,7 @@ class _OutletLoginScreenState extends State<OutletLoginScreen> with SingleTicker
             ],
           ),
         ),
-        const SizedBox(height: 8),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-          decoration: BoxDecoration(
-            color: AppTheme.cream,
-            borderRadius: BorderRadius.circular(6),
-            border: Border.all(color: AppTheme.border),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: const [
-              Icon(Icons.key, size: 12, color: AppTheme.cocoa),
-              SizedBox(width: 4),
-              Text(
-                'Default Counter PIN: 1979',
-                style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.cocoa),
-              ),
-            ],
-          ),
-        ),
+
       ],
     );
   }
