@@ -30,12 +30,15 @@ async function handleVerification(context, orderId) {
     if (!appId || !secretKey) {
       return new Response(JSON.stringify({ error: "Cashfree credentials are not configured on server." }), {
         status: 500,
-        headers: { "Content-Type": "application/json" }
+        headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
       });
     }
 
     if (!orderId) {
-      return new Response(JSON.stringify({ error: "Missing order_id" }), { status: 400 });
+      return new Response(JSON.stringify({ error: "Missing order_id" }), {
+        status: 400,
+        headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
+      });
     }
 
     const cfRes = await fetch(`${baseUrl}/orders/${orderId}`, {
@@ -49,6 +52,39 @@ async function handleVerification(context, orderId) {
     });
 
     const data = await cfRes.json();
+
+    // If order is PAID, update order status in ORDERS_KV
+    if (data?.order_status === "PAID") {
+      const kv = env.ORDERS_KV;
+      if (kv) {
+        try {
+          const raw = await kv.get(`order:${orderId}`);
+          if (raw) {
+            const order = JSON.parse(raw);
+            if (order.status === "awaiting_payment") {
+              order.status = "shop_acceptance_pending";
+              order.updatedAt = new Date().toISOString();
+              const timeline = order.timeline || [];
+              timeline.push({
+                eventType: "payment_successful",
+                actor: "cashfree",
+                timestamp: new Date().toISOString(),
+                details: "Cashfree online payment confirmed (PAID)"
+              });
+              timeline.push({
+                eventType: "shop_acceptance_pending",
+                actor: "system",
+                timestamp: new Date().toISOString(),
+                details: "Queued for counter review and preparation"
+              });
+              order.timeline = timeline;
+              await kv.put(`order:${orderId}`, JSON.stringify(order));
+            }
+          }
+        } catch (_) {}
+      }
+    }
+
     return new Response(JSON.stringify(data), {
       status: cfRes.status,
       headers: {
@@ -60,7 +96,7 @@ async function handleVerification(context, orderId) {
   } catch (err) {
     return new Response(JSON.stringify({ error: err.message }), {
       status: 500,
-      headers: { "Content-Type": "application/json" }
+      headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
     });
   }
 }
@@ -69,7 +105,7 @@ export async function onRequestOptions() {
   return new Response(null, {
     headers: {
       "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "POST, OPTIONS",
+      "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
       "Access-Control-Allow-Headers": "Content-Type"
     }
   });

@@ -17,10 +17,36 @@ export async function onRequestPost(context) {
     }
 
     const orderId = body.order_id || ("DSMW-" + Date.now());
-    const amount = Number(body.order_amount) || 1.00;
-    const phone = String(body.customer_phone || "9848012345").replace(/\D/g, "");
-    const name = body.customer_name || "Customer";
-    const email = body.customer_email || "orders@dsmilkworld.isroot.in";
+
+    // Amount is server-authoritative: prefer the stored order total in KV so a
+    // tampered client cannot pay a lower order_amount. Fall back to the body.
+    let amount = Number(body.order_amount) || 1.00;
+    const kv = env.ORDERS_KV;
+    if (kv) {
+      try {
+        const storedRaw = await kv.get(`order:${orderId}`);
+        if (storedRaw) {
+          const storedOrder = JSON.parse(storedRaw);
+          const storedTotalPaise = Number(storedOrder.totalPaise) || 0;
+          if (storedTotalPaise > 0) {
+            amount = storedTotalPaise / 100;
+          }
+        }
+      } catch (_) {}
+    }
+
+    // Sanitize 10-digit Indian mobile number
+    let rawPhone = String(body.customer_phone || "").replace(/\D/g, "");
+    if (rawPhone.length === 12 && rawPhone.startsWith("91")) {
+      rawPhone = rawPhone.slice(2);
+    }
+    const phone = rawPhone.length === 10 ? rawPhone : "9848012345";
+
+    const name = (body.customer_name || "Customer").trim();
+    const customerEmail = (body.customer_email || "").trim();
+    const validEmail = (customerEmail && customerEmail.includes("@")) ? customerEmail : "customer@dsmilkworld.isroot.in";
+
+    const publicBase = (env.PUBLIC_BASE_URL || "https://ds-milk-world.pages.dev").replace(/\/+$/, "");
 
     const payload = {
       order_id: orderId,
@@ -28,13 +54,13 @@ export async function onRequestPost(context) {
       order_currency: "INR",
       customer_details: {
         customer_id: "CUST_" + phone,
-        customer_name: name,
-        customer_email: email,
-        customer_phone: phone.length === 10 ? phone : "9848012345"
+        customer_name: name.length > 0 ? name : "Customer",
+        customer_email: validEmail,
+        customer_phone: phone
       },
       order_meta: {
-        return_url: "https://ds-milk-world.pages.dev/?order_id=" + orderId,
-        notify_url: "https://ds-milk-world.pages.dev/api/payment-webhook"
+        return_url: publicBase + "/?order_id=" + orderId,
+        notify_url: publicBase + "/api/payment-webhook"
       },
       order_note: "DS Milk World Order #" + orderId
     };
@@ -65,19 +91,27 @@ export async function onRequestPost(context) {
       });
       if (getRes.status === 200) {
         data = await getRes.json();
-        return new Response(JSON.stringify(data), {
-          status: 200,
-          headers: {
-            "Content-Type": "application/json",
-            "Access-Control-Allow-Origin": "*",
-            "Access-Control-Allow-Headers": "Content-Type"
-          }
-        });
       }
     }
 
+    // Persist payment session in ORDERS_KV if available
+    if (kv && data?.payment_session_id) {
+      try {
+        const raw = await kv.get(`order:${orderId}`);
+        if (raw) {
+          const order = JSON.parse(raw);
+          order.paymentSessionId = data.payment_session_id;
+          order.cfOrderId = data.cf_order_id;
+          order.customerName = name;
+          order.customerEmail = validEmail;
+          order.customerPhone = phone;
+          await kv.put(`order:${orderId}`, JSON.stringify(order));
+        }
+      } catch (_) {}
+    }
+
     return new Response(JSON.stringify(data), {
-      status: cfRes.status,
+      status: cfRes.status >= 200 && cfRes.status < 300 ? cfRes.status : (data?.payment_session_id ? 200 : cfRes.status),
       headers: {
         "Content-Type": "application/json",
         "Access-Control-Allow-Origin": "*",
