@@ -847,11 +847,6 @@ class _StaffConsoleScreenState extends State<StaffConsoleScreen> with SingleTick
 
     return Scaffold(
       appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: widget.onBackToStorefront,
-          tooltip: 'Back to Customer Storefront',
-        ),
         title: Row(
           children: [
             ClipRRect(
