@@ -141,10 +141,10 @@
     setTimeout(removeSplash, 4000);
   </script>
 
-  <!-- Cashfree Payment Gateway Web SDK (v3) -->
-  <script src="https://sdk.cashfree.com/js/v3/cashfree.js"></script>
+  <!-- Cashfree Payment Gateway Web SDK (v3) — non-blocking: must not delay flutter_bootstrap.js -->
+  <script src="https://sdk.cashfree.com/js/v3/cashfree.js" async></script>
   <script>
-    // Initialise Cashfree ONCE at page load (production mode)
+    // Initialise Cashfree lazily on first checkout (production mode)
     var cashfreeInstance = null;
     function getCashfree() {
       if (!cashfreeInstance && typeof Cashfree !== 'undefined') {
