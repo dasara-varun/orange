@@ -157,7 +157,7 @@ class _OutletHeaderState extends State<OutletHeader> {
                 fit: StackFit.expand,
                 children: [
                   Image.asset(
-                    'assets/images/ds_logo_banner.png',
+                    'assets/images/ds_logo_banner.jpg',
                     fit: BoxFit.cover,
                   ),
                   Container(
