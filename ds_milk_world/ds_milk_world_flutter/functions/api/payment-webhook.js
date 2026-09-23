@@ -90,12 +90,61 @@ export async function onRequestPost(context) {
                   });
                   order.timeline = timeline;
                   await kv.put(`order:${orderId}`, JSON.stringify(order));
+                  await notifyCustomer(env, order, orderId, cfData);
                 }
               }
             }
           }
         } catch (e) {
           console.error("Webhook order re-verify failed:", e.message);
+        }
+      }
+    }
+
+    // Refund status updates — email the customer only when the refund
+    // actually succeeds (never treat PENDING as completed).
+    if (eventType === "REFUND_STATUS_WEBHOOK" && orderId) {
+      const refund = payload.data?.refund;
+      const refundStatus = (refund?.refund_status || "").toUpperCase();
+      if (refundStatus === "SUCCESS") {
+        try {
+          const kv = env.ORDERS_KV;
+          if (kv) {
+            const raw = await kv.get(`order:${orderId}`);
+            if (raw) {
+              const order = JSON.parse(raw);
+              order.status = "refunded";
+              order.updatedAt = new Date().toISOString();
+              order.refundDetails = {
+                ...(order.refundDetails || {}),
+                refundId: refund.refund_id,
+                cfRefundId: refund.cf_refund_id,
+                amount: refund.refund_amount,
+                status: "SUCCESS",
+                arn: refund.refund_arn || null,
+                timestamp: new Date().toISOString()
+              };
+              const timeline = order.timeline || [];
+              timeline.push({
+                eventType: "payment_refunded",
+                actor: "system",
+                timestamp: new Date().toISOString(),
+                details: `Refund of ₹${Number(refund.refund_amount || 0).toFixed(2)} credited (ARN: ${refund.refund_arn || "n/a"})`
+              });
+              order.timeline = timeline;
+              await kv.put(`order:${orderId}`, JSON.stringify(order));
+              if (isCustomerEmail(order.customerEmail)) {
+                await sendCustomerMail(env, {
+                  to: order.customerEmail,
+                  name: order.customerName,
+                  subject: `Refund completed for Order #${orderId}`,
+                  html: refundHtml(order, orderId, refund, true)
+                });
+              }
+            }
+          }
+        } catch (e) {
+          console.error("Refund webhook handling failed:", e.message);
         }
       }
     }
@@ -110,4 +159,64 @@ export async function onRequestPost(context) {
       headers: { "Content-Type": "application/json" }
     });
   }
+}
+
+function isCustomerEmail(email) {
+  const e = String(email || "").trim();
+  return e.includes("@") && !e.endsWith("@dsmilkworld.isroot.in");
+}
+
+function esc(v) {
+  return String(v ?? "")
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
+async function sendCustomerMail(env, { to, name, subject, html }) {
+  if (!isCustomerEmail(to)) return;
+  try {
+    await fetch("https://api.mailchannels.net/tx/v1/send", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        personalizations: [{ to: [{ email: to, name: name || "Customer" }] }],
+        from: { email: "orders@dsmilkworld.isroot.in", name: "DS Milk World" },
+        subject,
+        content: [{ type: "text/html", value: html }]
+      })
+    });
+  } catch (_) {}
+}
+
+function notifyCustomer(env, order, orderId, cfData) {
+  const amount = cfData?.order_amount != null ? Number(cfData.order_amount).toFixed(2)
+    : ((order.totalPaise || 0) / 100).toFixed(2);
+  return sendCustomerMail(env, {
+    to: order.customerEmail,
+    name: order.customerName,
+    subject: `Payment confirmed for Order #${orderId}`,
+    html: `<!DOCTYPE html><html><body style="font-family:sans-serif;background:#FFF9F0;color:#1E1B19;padding:24px;">
+      <div style="max-width:560px;margin:auto;background:#fff;border:1px solid #E8DEC8;border-radius:12px;padding:24px;">
+        <h2 style="color:#3A241B;margin-top:0;">Payment confirmed</h2>
+        <p>Hi ${esc(order.customerName || "Customer")},</p>
+        <p>We received your payment of <strong>₹${esc(amount)}</strong> for order <strong>#${esc(orderId)}</strong>.</p>
+        <p>Your order is now with the counter for review and preparation.</p>
+        <p style="color:#786F66;font-size:12px;">DS Milk World • Kanuru Center, Vijayawada</p>
+      </div></body></html>`
+  });
+}
+
+function refundHtml(order, orderId, refund, completed) {
+  const amount = Number(refund?.refund_amount || 0).toFixed(2);
+  const title = completed ? "Refund completed" : "Refund initiated";
+  const body = completed
+    ? `Your refund of <strong>₹${esc(amount)}</strong> for order <strong>#${esc(orderId)}</strong> has been credited to your original payment method.${refund?.refund_arn ? `<br>ARN: <code>${esc(refund.refund_arn)}</code>` : ""}`
+    : `Your refund of <strong>₹${esc(amount)}</strong> for order <strong>#${esc(orderId)}</strong> has been initiated and will credit to your original payment method as per bank timelines.`;
+  return `<!DOCTYPE html><html><body style="font-family:sans-serif;background:#FFF9F0;color:#1E1B19;padding:24px;">
+    <div style="max-width:560px;margin:auto;background:#fff;border:1px solid #E8DEC8;border-radius:12px;padding:24px;">
+      <h2 style="color:#3A241B;margin-top:0;">${title}</h2>
+      <p>Hi ${esc(order?.customerName || "Customer")},</p>
+      <p>${body}</p>
+      <p style="color:#786F66;font-size:12px;">DS Milk World • Kanuru Center, Vijayawada</p>
+    </div></body></html>`;
 }

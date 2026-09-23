@@ -79,6 +79,13 @@ async function handleVerification(context, orderId) {
               });
               order.timeline = timeline;
               await kv.put(`order:${orderId}`, JSON.stringify(order));
+              // Notify the customer only (never the merchant account inbox).
+              await sendCustomerEmail(env, {
+                to: order.customerEmail,
+                name: order.customerName,
+                subject: `Payment confirmed for Order #${orderId}`,
+                html: paymentConfirmedHtml(order, orderId, data)
+              });
             }
           }
         } catch (_) {}
@@ -109,4 +116,44 @@ export async function onRequestOptions() {
       "Access-Control-Allow-Headers": "Content-Type"
     }
   });
+}
+
+function isCustomerEmail(email) {
+  const e = String(email || "").trim();
+  return e.includes("@") && !e.endsWith("@dsmilkworld.isroot.in");
+}
+
+async function sendCustomerEmail(env, { to, name, subject, html }) {
+  if (!isCustomerEmail(to)) return;
+  try {
+    await fetch("https://api.mailchannels.net/tx/v1/send", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        personalizations: [{ to: [{ email: to, name: name || "Customer" }] }],
+        from: { email: "orders@dsmilkworld.isroot.in", name: "DS Milk World" },
+        subject,
+        content: [{ type: "text/html", value: html }]
+      })
+    });
+  } catch (_) {}
+}
+
+function esc(v) {
+  return String(v ?? "")
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
+function paymentConfirmedHtml(order, orderId, cfData) {
+  const total = ((order.totalPaise || 0) / 100).toFixed(2);
+  const amount = cfData?.order_amount != null ? Number(cfData.order_amount).toFixed(2) : total;
+  return `<!DOCTYPE html><html><body style="font-family:sans-serif;background:#FFF9F0;color:#1E1B19;padding:24px;">
+    <div style="max-width:560px;margin:auto;background:#fff;border:1px solid #E8DEC8;border-radius:12px;padding:24px;">
+      <h2 style="color:#3A241B;margin-top:0;">Payment confirmed</h2>
+      <p>Hi ${esc(order.customerName || "Customer")},</p>
+      <p>We received your payment of <strong>₹${esc(amount)}</strong> for order <strong>#${esc(orderId)}</strong>.</p>
+      <p>Your order is now with the counter for review and preparation. You can track status in the DS Milk World app.</p>
+      <p style="color:#786F66;font-size:12px;">DS Milk World • Kanuru Center, Bandar Road, Vijayawada</p>
+    </div></body></html>`;
 }

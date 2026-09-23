@@ -127,7 +127,9 @@ class CashfreeService {
       'customer_details': {
         'customer_id': customerId,
         'customer_name': order.customerName ?? 'Customer',
-        'customer_email': order.customerEmail ?? 'orders@dsmilkworld.isroot.in',
+        'customer_email': order.customerEmail?.isNotEmpty == true
+            ? order.customerEmail!
+            : 'customer@dsmilkworld.isroot.in',
         'customer_phone': cleanPhone.length == 10 ? cleanPhone : '9848012345',
       },
       'order_meta': {

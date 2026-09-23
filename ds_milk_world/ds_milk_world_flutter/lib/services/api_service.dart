@@ -188,12 +188,12 @@ class ApiService {
     required double longitude,
     required List<OrderItem> items,
   }) async {
+    OrderRecord? serverOrder;
     if (_hasCheckedServer && !_serverOnline) {
-      // Direct local creation in 0ms
       _probeServerInBackground();
     } else {
       try {
-        final res = await client.order.createOrder(
+        serverOrder = await client.order.createOrder(
           customerPhone,
           customerEmail,
           customerName,
@@ -205,13 +205,16 @@ class ApiService {
         ).timeout(const Duration(milliseconds: 350));
         _serverOnline = true;
         _hasCheckedServer = true;
-        return res;
       } catch (_) {
         _serverOnline = false;
         _hasCheckedServer = true;
       }
     }
-      // Local fallback logic
+
+    final OrderRecord record;
+    if (serverOrder != null) {
+      record = serverOrder;
+    } else {
       final dist = _haversineDistance(16.4854333, 80.6874703, latitude, longitude);
       if (dist > 5.0) {
         throw Exception('Location exceeds 5.0 km delivery radius.');
@@ -239,7 +242,7 @@ class ApiService {
       final dateStr = '${now.year}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}';
       final orderNumber = 'DSMW-$dateStr-${_orderSeq++}';
 
-      final record = OrderRecord(
+      record = OrderRecord(
         orderNumber: orderNumber,
         customerPhone: customerPhone,
         customerEmail: customerEmail,
@@ -261,22 +264,25 @@ class ApiService {
         createdAt: now,
         updatedAt: now,
       );
-      _orders[orderNumber] = record;
-      _logLocalEvent(orderNumber, 'order_created', 'customer', 'Order created');
+    }
 
-      // Persist to Cloudflare KV Edge API (fire-and-forget with error handler
-      // so async failures never surface as unhandled exceptions)
-      http
+    _orders[record.orderNumber] = record;
+    _logLocalEvent(record.orderNumber, 'order_created', 'customer', 'Order created');
+
+    // Always await KV persistence so the outlet console (and payment
+    // verification / Cashfree amount recompute) can see the order immediately.
+    try {
+      await http
           .post(
             Uri.parse('/api/orders'),
             headers: {'Content-Type': 'application/json'},
             body: jsonEncode(record.toJson()),
           )
-          .timeout(const Duration(seconds: 4))
-          .catchError((_) => http.Response('{}', 0));
+          .timeout(const Duration(seconds: 4));
+    } catch (_) {}
 
-      return record;
-    }
+    return record;
+  }
 
   OrderRecord _safeOrderFromJson(Map<String, dynamic> json) {
     try {
@@ -404,7 +410,7 @@ class ApiService {
   }
 
   Future<PaymentAttempt> createCheckoutSession(String orderNumber, String paymentMethod) async {
-    final order = _orders[orderNumber];
+    final order = _orders[orderNumber] ?? await getOrder(orderNumber);
 
     // Priority 1: Cloudflare Edge Function calling Cashfree Production PG
     try {
@@ -414,10 +420,10 @@ class ApiService {
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'order_id': orderNumber,
-          'order_amount': ((order?.totalPaise ?? 100) / 100.0),
-          'customer_phone': order?.customerPhone ?? '9848012345',
-          'customer_name': order?.customerName ?? 'Customer',
-          'customer_email': order?.customerEmail ?? 'orders@dsmilkworld.isroot.in',
+          'order_amount': ((order?.totalPaise ?? 0) / 100.0),
+          'customer_phone': order?.customerPhone,
+          'customer_name': order?.customerName,
+          'customer_email': order?.customerEmail,
         }),
       ).timeout(const Duration(seconds: 4));
 
@@ -724,7 +730,24 @@ class ApiService {
           o.status = 'refunded';
           o.updatedAt = DateTime.now();
           _logLocalEvent(orderNumber, 'payment_refunded', 'staff', 'Cashfree refund of ${AppTheme.formatPaise(amountPaise)} processed: $reason');
+          _orders[orderNumber] = o;
         }
+        try {
+          await http.patch(
+            Uri.parse('/api/orders/$orderNumber'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({
+              'action': 'refund',
+              'reason': reason,
+              'refundDetails': {
+                'refundId': data['refund_id']?.toString(),
+                'amount': amountPaise,
+                'note': reason,
+                'timestamp': DateTime.now().toIso8601String(),
+              },
+            }),
+          ).timeout(const Duration(seconds: 3));
+        } catch (_) {}
         return {'success': true, 'data': data};
       } else {
         final err = jsonDecode(resp.body);

@@ -27,8 +27,30 @@ export async function onRequestPost(context) {
     }
 
     const amount = Number(body.refund_amount);
-    if (!amount || amount <= 0) {
+    if (!amount || amount <= 0 || !Number.isFinite(amount)) {
       return new Response(JSON.stringify({ error: "Invalid refund_amount" }), {
+        status: 400,
+        headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
+      });
+    }
+
+    // Server-side cap against the stored order total (never trust the client).
+    let maxRefundRupees = amount;
+    let storedOrder = null;
+    if (env.ORDERS_KV) {
+      try {
+        const raw = await env.ORDERS_KV.get(`order:${orderId}`);
+        if (raw) {
+          storedOrder = JSON.parse(raw);
+          const totalPaise = Number(storedOrder.totalPaise) || 0;
+          if (totalPaise > 0) maxRefundRupees = totalPaise / 100;
+        }
+      } catch (_) {}
+    }
+    if (amount > maxRefundRupees + 0.001) {
+      return new Response(JSON.stringify({
+        error: `Refund amount exceeds paid total of ₹${maxRefundRupees.toFixed(2)}`
+      }), {
         status: 400,
         headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
       });
@@ -89,6 +111,33 @@ export async function onRequestPost(context) {
             order.timeline = timeline;
 
             await kv.put(`order:${orderId}`, JSON.stringify(order));
+
+            // Customer-only refund notice. PENDING is not treated as completed —
+            // the SUCCESS confirmation is sent from REFUND_STATUS_WEBHOOK.
+            const to = String(order.customerEmail || "").trim();
+            if (to.includes("@") && !to.endsWith("@dsmilkworld.isroot.in")) {
+              try {
+                await fetch("https://api.mailchannels.net/tx/v1/send", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    personalizations: [{ to: [{ email: to, name: order.customerName || "Customer" }] }],
+                    from: { email: "orders@dsmilkworld.isroot.in", name: "DS Milk World" },
+                    subject: `Refund initiated for Order #${orderId}`,
+                    content: [{
+                      type: "text/html",
+                      value: `<!DOCTYPE html><html><body style="font-family:sans-serif;background:#FFF9F0;color:#1E1B19;padding:24px;">
+                        <div style="max-width:560px;margin:auto;background:#fff;border:1px solid #E8DEC8;border-radius:12px;padding:24px;">
+                          <h2 style="color:#3A241B;margin-top:0;">Refund initiated</h2>
+                          <p>Hi ${String(order.customerName || "Customer").replace(/&/g,"&amp;").replace(/</g,"&lt;")},</p>
+                          <p>Your refund of <strong>₹${amount.toFixed(2)}</strong> for order <strong>#${String(orderId).replace(/&/g,"&amp;").replace(/</g,"&lt;")}</strong> has been initiated. Credit timelines depend on your payment method (typically 5–7 business days for standard refunds).</p>
+                          <p style="color:#786F66;font-size:12px;">DS Milk World • Kanuru Center, Vijayawada</p>
+                        </div></body></html>`
+                    }]
+                  })
+                });
+              } catch (_) {}
+            }
           }
         } catch (_) {}
       }

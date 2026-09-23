@@ -31,8 +31,14 @@ export async function onRequestPost(context) {
       });
     }
 
+    // Recipient is strictly the customer on this order — never a merchant
+    // or support inbox. Placeholder / support addresses are not billable
+    // recipients for tax-invoice dispatch.
     const customerEmail = (order.customerEmail || body.customer_email || "").trim();
-    if (!customerEmail || !customerEmail.includes("@")) {
+    const isPlaceholderEmail =
+      !customerEmail.includes("@") ||
+      customerEmail.endsWith("@dsmilkworld.isroot.in");
+    if (isPlaceholderEmail) {
       return new Response(JSON.stringify({ error: "Valid customer_email is required for tax invoice dispatch" }), {
         status: 400,
         headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
