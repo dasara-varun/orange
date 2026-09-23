@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:ds_milk_world_client/ds_milk_world_client.dart';
 import '../theme/app_theme.dart';
 import '../state/cart_state.dart';
+import '../services/product_images.dart';
 
 class ProductCard extends StatefulWidget {
   final Product? product;
@@ -59,11 +60,37 @@ class _ProductCardState extends State<ProductCard> {
               ),
             ],
           ),
-          child: Padding(
+            child: Padding(
             padding: const EdgeInsets.all(14),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Product image (Swiggy/Zomato asset, grouped by item type)
+                Builder(
+                  builder: (context) {
+                    final asset = ProductImages.forName(activeProduct.name);
+                    if (asset == null) return const SizedBox.shrink();
+                    return Container(
+                      margin: const EdgeInsets.only(right: 12),
+                      width: 64,
+                      height: 64,
+                      decoration: BoxDecoration(
+                        color: AppTheme.cream,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: AppTheme.border, width: 1),
+                      ),
+                      clipBehavior: Clip.antiAlias,
+                      child: Image.asset(
+                        asset,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => const Center(
+                          child: Icon(Icons.local_drink, size: 22, color: AppTheme.muted),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+
                 // Veg indicator
                 Container(
                   margin: const EdgeInsets.only(top: 4, right: 10),
