@@ -4,6 +4,7 @@ import 'package:ds_milk_world_client/ds_milk_world_client.dart';
 import '../theme/app_theme.dart';
 import '../services/api_service.dart';
 import '../services/mock_data.dart';
+import '../services/rapido_live_service.dart';
 
 class StaffConsoleScreen extends StatefulWidget {
   final VoidCallback onBackToStorefront;
@@ -169,6 +170,128 @@ class _StaffConsoleScreenState extends State<StaffConsoleScreen> with SingleTick
     );
   }
 
+  // Action: Issue Direct Cashfree Refund from Console
+  void _showRefundDialog(OrderRecord order) {
+    final reasonController = TextEditingController(text: 'Customer requested order refund');
+    final amountController = TextEditingController(text: (order.totalPaise / 100).toStringAsFixed(2));
+    bool isProcessing = false;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: Row(
+            children: [
+              const Icon(Icons.currency_rupee, color: AppTheme.saffronDark, size: 22),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text('Cashfree Refund #${order.orderNumber}', style: const TextStyle(fontSize: 16)),
+              ),
+            ],
+          ),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Customer: ${order.customerName ?? 'Customer'} (${order.customerPhone})',
+                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.cocoa),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  'Total Paid: ${AppTheme.formatPaise(order.totalPaise)}',
+                  style: const TextStyle(fontSize: 12, color: AppTheme.muted),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: amountController,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  decoration: const InputDecoration(
+                    labelText: 'Refund Amount (₹) *',
+                    prefixText: '₹ ',
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: reasonController,
+                  decoration: const InputDecoration(
+                    labelText: 'Refund Reason / Note *',
+                    hintText: 'e.g. Counter closed or customer cancelled',
+                  ),
+                ),
+                const SizedBox(height: 12),
+                const Text(
+                  'This will issue an authoritative reversal via Cashfree Payment Gateway directly to the customer’s original payment source.',
+                  style: TextStyle(fontSize: 11, color: AppTheme.muted, height: 1.3),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: isProcessing ? null : () => Navigator.pop(ctx),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: AppTheme.error, foregroundColor: Colors.white),
+              onPressed: isProcessing
+                  ? null
+                  : () async {
+                      final amountVal = double.tryParse(amountController.text.trim()) ?? 0;
+                      if (amountVal <= 0) return;
+                      final reason = reasonController.text.trim();
+                      if (reason.isEmpty) return;
+
+                      final amountPaise = (amountVal * 100).round();
+                      if (amountPaise > order.totalPaise) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Refund cannot exceed the paid total of ${AppTheme.formatPaise(order.totalPaise)}.'),
+                            backgroundColor: AppTheme.error,
+                          ),
+                        );
+                        return;
+                      }
+
+                      setDialogState(() => isProcessing = true);
+
+                      final res = await ApiService.instance.refundOrder(
+                        orderNumber: order.orderNumber,
+                        amountPaise: amountPaise,
+                        reason: reason,
+                      );
+
+                      if (context.mounted) {
+                        Navigator.pop(ctx);
+                        if (res['success'] == true) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Refund of ₹${amountVal.toStringAsFixed(2)} processed successfully via Cashfree!'),
+                              backgroundColor: AppTheme.mint,
+                            ),
+                          );
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Refund Failed: ${res['error']}'),
+                              backgroundColor: AppTheme.error,
+                            ),
+                          );
+                        }
+                        _loadData();
+                      }
+                    },
+              child: isProcessing
+                  ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                  : const Text('Process Cashfree Refund'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   // Action: Mark Ready with Checklist
   void _showMarkReadyDialog(OrderRecord order) {
     bool isChilled = true;
@@ -253,26 +376,118 @@ class _StaffConsoleScreenState extends State<StaffConsoleScreen> with SingleTick
   // Action: Assign Delivery (Partner or Manual Fallback)
   void _showAssignDeliveryDialog(OrderRecord order) {
     String provider = 'Rapido';
-    final riderNameCtrl = TextEditingController(text: 'Suresh V');
-    final riderPhoneCtrl = TextEditingController(text: '+91 98765 43210');
-    final trackingCtrl = TextEditingController(text: 'https://track.rapido.bike/del-4982');
+    final riderNameCtrl = TextEditingController(text: 'Ramesh Naidu');
+    final riderPhoneCtrl = TextEditingController(text: '+91 98492 14589');
+    final trackingCtrl = TextEditingController(text: 'https://track.rapido.bike/parcel/RAP-VIJ-${order.orderNumber.replaceAll('DSMW-', '')}');
     bool manualFallback = false;
+    bool isBookingRapido = false;
 
     showDialog(
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
-          title: Text('Assign Delivery #${order.orderNumber}'),
+          title: Row(
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(4),
+                child: Image.asset('assets/images/ds_logo_icon.png', width: 20, height: 20, fit: BoxFit.cover),
+              ),
+              const SizedBox(width: 8),
+              Expanded(child: Text('Dispatch #${order.orderNumber}', style: const TextStyle(fontSize: 16))),
+            ],
+          ),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Quick Book Rapido Parcel Action
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppTheme.cream,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: AppTheme.border),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Row(
+                        children: [
+                          Icon(Icons.two_wheeler, color: AppTheme.cocoa, size: 18),
+                          SizedBox(width: 6),
+                          Text('Rapido Bike Parcel (Fastest Dispatch)', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: AppTheme.cocoa)),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        'Deliver to: ${order.deliveryAddress}',
+                        style: const TextStyle(fontSize: 11, color: AppTheme.muted),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 10),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppTheme.cocoa,
+                            foregroundColor: AppTheme.milk,
+                            padding: const EdgeInsets.symmetric(vertical: 10),
+                          ),
+                          onPressed: isBookingRapido
+                              ? null
+                              : () async {
+                                  setDialogState(() => isBookingRapido = true);
+                                  try {
+                                    final res = await RapidoLiveService.bookRapidoParcel(
+                                      orderNumber: order.orderNumber,
+                                      dropLat: order.latitude,
+                                      dropLng: order.longitude,
+                                    );
+                                    setDialogState(() {
+                                      provider = 'Rapido';
+                                      riderNameCtrl.text = res.captainName;
+                                      riderPhoneCtrl.text = '${res.captainPhone} (${res.vehicleNumber})';
+                                      trackingCtrl.text = res.trackingUrl;
+                                      isBookingRapido = false;
+                                    });
+                                    if (context.mounted) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          content: Text('Rapido Captain ${res.captainName} booked! OTP: ${res.deliveryOtp}'),
+                                          backgroundColor: AppTheme.mint,
+                                        ),
+                                      );
+                                    }
+                                  } catch (e) {
+                                    setDialogState(() => isBookingRapido = false);
+                                    if (context.mounted) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          content: Text('Rapido booking failed: $e'),
+                                          backgroundColor: AppTheme.error,
+                                        ),
+                                      );
+                                    }
+                                  }
+                                },
+                          icon: isBookingRapido
+                              ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                              : const Icon(Icons.flash_on, size: 16, color: AppTheme.saffron),
+                          label: const Text('Auto-Book Live Rapido Captain', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
                 DropdownButtonFormField<String>(
                   value: provider,
                   decoration: const InputDecoration(labelText: 'Delivery Integration / Partner'),
                   items: const [
-                    DropdownMenuItem(value: 'Rapido', child: Text('Rapido API')),
-                    DropdownMenuItem(value: 'Shadowfax', child: Text('Shadowfax')),
+                    DropdownMenuItem(value: 'Rapido', child: Text('Rapido Bike Parcel')),
+                    DropdownMenuItem(value: 'Shadowfax', child: Text('Shadowfax Logistics')),
                     DropdownMenuItem(value: 'Shop Rider', child: Text('Shop In-House Rider (Manual Fallback)')),
                   ],
                   onChanged: (v) {
@@ -285,17 +500,17 @@ class _StaffConsoleScreenState extends State<StaffConsoleScreen> with SingleTick
                 const SizedBox(height: 12),
                 TextField(
                   controller: riderNameCtrl,
-                  decoration: const InputDecoration(labelText: 'Rider Name'),
+                  decoration: const InputDecoration(labelText: 'Rider / Captain Name'),
                 ),
                 const SizedBox(height: 12),
                 TextField(
                   controller: riderPhoneCtrl,
-                  decoration: const InputDecoration(labelText: 'Rider Phone'),
+                  decoration: const InputDecoration(labelText: 'Rider Phone & Vehicle Number'),
                 ),
                 const SizedBox(height: 12),
                 TextField(
                   controller: trackingCtrl,
-                  decoration: const InputDecoration(labelText: 'Tracking URL / Reference'),
+                  decoration: const InputDecoration(labelText: 'Live Tracking URL / Reference'),
                 ),
               ],
             ),
@@ -306,6 +521,7 @@ class _StaffConsoleScreenState extends State<StaffConsoleScreen> with SingleTick
               child: const Text('Cancel'),
             ),
             ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: AppTheme.cocoa, foregroundColor: Colors.white),
               onPressed: () async {
                 Navigator.pop(ctx);
                 await ApiService.instance.assignDelivery(
@@ -844,21 +1060,49 @@ class _StaffConsoleScreenState extends State<StaffConsoleScreen> with SingleTick
                     )),
                 const Divider(height: 16),
                 // Action row with KOT ticket button & stage actions
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    OutlinedButton.icon(
-                      icon: const Icon(Icons.receipt_long, size: 14, color: AppTheme.cocoa),
-                      label: const Text('KOT Ticket', style: TextStyle(fontSize: 12, color: AppTheme.cocoa, fontWeight: FontWeight.w700)),
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                        minimumSize: Size.zero,
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        side: const BorderSide(color: AppTheme.border),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Wrap(
+                        spacing: 8,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        children: [
+                          OutlinedButton.icon(
+                            icon: const Icon(Icons.receipt_long, size: 14, color: AppTheme.cocoa),
+                            label: const Text('KOT Ticket', style: TextStyle(fontSize: 12, color: AppTheme.cocoa, fontWeight: FontWeight.w700)),
+                            style: OutlinedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                              minimumSize: Size.zero,
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                              side: const BorderSide(color: AppTheme.border),
+                            ),
+                            onPressed: () => _showKotDialog(order),
+                          ),
+                          if (order.status != 'rejected' && order.status != 'refunded')
+                            OutlinedButton.icon(
+                              icon: const Icon(Icons.currency_rupee, size: 14, color: AppTheme.error),
+                              label: const Text('Refund', style: TextStyle(fontSize: 12, color: AppTheme.error, fontWeight: FontWeight.w700)),
+                              style: OutlinedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                minimumSize: Size.zero,
+                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                side: const BorderSide(color: AppTheme.error),
+                              ),
+                              onPressed: () => _showRefundDialog(order),
+                            )
+                          else if (order.status == 'refunded')
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: AppTheme.cream,
+                                borderRadius: BorderRadius.circular(6),
+                                border: Border.all(color: AppTheme.border),
+                              ),
+                              child: const Text('Refunded via Cashfree', style: TextStyle(color: AppTheme.cocoa, fontSize: 11, fontWeight: FontWeight.w700)),
+                            ),
+                        ],
                       ),
-                      onPressed: () => _showKotDialog(order),
-                    ),
-                    Row(
+                      Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         if (stage == 'new') ...[

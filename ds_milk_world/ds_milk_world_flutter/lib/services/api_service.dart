@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:http/http.dart' as http;
 import 'package:ds_milk_world_client/ds_milk_world_client.dart';
 import '../main.dart';
+import '../theme/app_theme.dart';
 import 'mock_data.dart';
 
 class ApiService {
@@ -262,8 +263,67 @@ class ApiService {
       );
       _orders[orderNumber] = record;
       _logLocalEvent(orderNumber, 'order_created', 'customer', 'Order created');
+
+      // Persist to Cloudflare KV Edge API (fire-and-forget with error handler
+      // so async failures never surface as unhandled exceptions)
+      http
+          .post(
+            Uri.parse('/api/orders'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode(record.toJson()),
+          )
+          .timeout(const Duration(seconds: 4))
+          .catchError((_) => http.Response('{}', 0));
+
       return record;
     }
+
+  OrderRecord _safeOrderFromJson(Map<String, dynamic> json) {
+    try {
+      return OrderRecord.fromJson(json);
+    } catch (_) {
+      final itemsRaw = json['items'] as List? ?? [];
+      final items = itemsRaw.map((e) {
+        if (e is OrderItem) return e;
+        final m = e as Map<String, dynamic>;
+        return OrderItem(
+          productSku: m['productSku']?.toString() ?? '',
+          nameSnapshot: m['nameSnapshot']?.toString() ?? '',
+          unitPricePaise: (m['unitPricePaise'] as num?)?.toInt() ?? 0,
+          quantity: (m['quantity'] as num?)?.toInt() ?? 1,
+          optionsSnapshot: m['optionsSnapshot']?.toString(),
+          subtotalPaise: (m['subtotalPaise'] as num?)?.toInt() ?? 0,
+        );
+      }).toList();
+
+      return OrderRecord(
+        id: json['id'] as int?,
+        orderNumber: json['orderNumber']?.toString() ?? '',
+        customerPhone: json['customerPhone']?.toString() ?? '',
+        customerEmail: json['customerEmail']?.toString(),
+        customerName: json['customerName']?.toString(),
+        deliveryAddress: json['deliveryAddress']?.toString() ?? '',
+        landmark: json['landmark']?.toString(),
+        latitude: (json['latitude'] as num?)?.toDouble() ?? 16.4854333,
+        longitude: (json['longitude'] as num?)?.toDouble() ?? 80.6874703,
+        distanceKm: (json['distanceKm'] as num?)?.toDouble() ?? 1.0,
+        status: json['status']?.toString() ?? 'awaiting_payment',
+        subtotalPaise: (json['subtotalPaise'] as num?)?.toInt() ?? 0,
+        deliveryFeePaise: (json['deliveryFeePaise'] as num?)?.toInt() ?? 0,
+        totalPaise: (json['totalPaise'] as num?)?.toInt() ?? 0,
+        currency: json['currency']?.toString() ?? 'INR',
+        items: items,
+        prepTimeMinutes: (json['prepTimeMinutes'] as num?)?.toInt(),
+        rejectionReason: json['rejectionReason']?.toString(),
+        packingChecklistConfirmed: json['packingChecklistConfirmed'] == true,
+        invoiceId: json['invoiceId']?.toString(),
+        invoicePdfUrl: json['invoicePdfUrl']?.toString(),
+        invoiceStatus: json['invoiceStatus']?.toString(),
+        createdAt: DateTime.tryParse(json['createdAt']?.toString() ?? '') ?? DateTime.now(),
+        updatedAt: DateTime.tryParse(json['updatedAt']?.toString() ?? '') ?? DateTime.now(),
+      );
+    }
+  }
 
   List<OrderRecord> _getLocalOrders([String? statusFilter]) {
     if (statusFilter == null || statusFilter.isEmpty) {
@@ -274,6 +334,21 @@ class ApiService {
   }
 
   Future<OrderRecord?> getOrder(String orderNumber) async {
+    // Priority 1: Cloudflare Edge KV API
+    try {
+      final res = await http.get(
+        Uri.parse('/api/orders?order_id=$orderNumber'),
+        headers: {'Content-Type': 'application/json'},
+      ).timeout(const Duration(seconds: 3));
+
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body) as Map<String, dynamic>;
+        final order = _safeOrderFromJson(data);
+        _orders[orderNumber] = order;
+        return order;
+      }
+    } catch (_) {}
+
     if (_hasCheckedServer && !_serverOnline) {
       _probeServerInBackground();
       return _orders[orderNumber];
@@ -282,6 +357,7 @@ class ApiService {
       final res = await client.order.getOrder(orderNumber).timeout(const Duration(milliseconds: 350));
       _serverOnline = true;
       _hasCheckedServer = true;
+      if (res != null) _orders[orderNumber] = res;
       return res;
     } catch (_) {
       _serverOnline = false;
@@ -291,6 +367,26 @@ class ApiService {
   }
 
   Future<List<OrderRecord>> listAllOrders([String? statusFilter]) async {
+    // Priority 1: Cloudflare Edge KV API (live connection for outlet & customer)
+    try {
+      final queryParam = (statusFilter != null && statusFilter.isNotEmpty) ? '?status=$statusFilter' : '';
+      final res = await http.get(
+        Uri.parse('/api/orders$queryParam'),
+        headers: {'Content-Type': 'application/json'},
+      ).timeout(const Duration(seconds: 3));
+
+      if (res.statusCode == 200) {
+        final List list = jsonDecode(res.body);
+        final liveOrders = list.map((e) => _safeOrderFromJson(e as Map<String, dynamic>)).toList();
+        for (final o in liveOrders) {
+          _orders[o.orderNumber] = o;
+        }
+        if (liveOrders.isNotEmpty) {
+          return liveOrders;
+        }
+      }
+    } catch (_) {}
+
     if (_hasCheckedServer && !_serverOnline) {
       _probeServerInBackground();
       return _getLocalOrders(statusFilter);
@@ -409,138 +505,78 @@ class ApiService {
     return false;
   }
 
-  Future<bool> processPaymentWebhook({
-    required String orderNumber,
-    required String externalId,
-    required String status,
-    required int amountPaise,
-  }) async {
-    if (_hasCheckedServer && !_serverOnline) {
-      final order = _orders[orderNumber];
-      if (order != null) {
-        order.status = 'shop_acceptance_pending';
-        order.updatedAt = DateTime.now();
-        _logLocalEvent(orderNumber, 'payment_successful', 'payment_gateway', 'Payment verified');
-        _logLocalEvent(orderNumber, 'shop_acceptance_pending', 'system', 'Queued for shop review');
-        return true;
-      }
-      return false;
-    }
-    try {
-      final res = await client.paymentWebhook.processWebhook(
-        'generic_simulator',
-        externalId,
-        orderNumber,
-        status,
-        amountPaise,
-        null,
-      ).timeout(const Duration(milliseconds: 350));
-      _serverOnline = true;
-      _hasCheckedServer = true;
-      return res;
-    } catch (_) {
-      _serverOnline = false;
-      _hasCheckedServer = true;
-      final order = _orders[orderNumber];
-      if (order != null) {
-        order.status = 'shop_acceptance_pending';
-        order.updatedAt = DateTime.now();
-        _logLocalEvent(orderNumber, 'payment_successful', 'payment_gateway', 'Payment verified');
-        _logLocalEvent(orderNumber, 'shop_acceptance_pending', 'system', 'Queued for shop review');
-        return true;
-      }
-      return false;
-    }
-  }
-
   Future<OrderRecord?> acceptOrder(String orderNumber, int prepTimeMinutes) async {
-    if (_hasCheckedServer && !_serverOnline) {
-      final o = _orders[orderNumber];
-      if (o != null) {
-        o.status = 'preparing';
-        o.prepTimeMinutes = prepTimeMinutes;
-        o.updatedAt = DateTime.now();
-        _logLocalEvent(orderNumber, 'order_accepted', 'staff', 'Accepted with prep time $prepTimeMinutes mins');
-      }
-      return o;
+    final o = _orders[orderNumber];
+    if (o != null) {
+      o.status = 'prep_in_progress';
+      o.prepTimeMinutes = prepTimeMinutes;
+      o.updatedAt = DateTime.now();
+      _logLocalEvent(orderNumber, 'order_accepted', 'staff', 'Accepted with prep time $prepTimeMinutes mins');
     }
+
     try {
-      final res = await client.admin.acceptOrder(orderNumber, prepTimeMinutes).timeout(const Duration(milliseconds: 350));
-      _serverOnline = true;
-      _hasCheckedServer = true;
-      return res;
-    } catch (_) {
-      _serverOnline = false;
-      _hasCheckedServer = true;
-      final o = _orders[orderNumber];
-      if (o != null) {
-        o.status = 'preparing';
-        o.prepTimeMinutes = prepTimeMinutes;
-        o.updatedAt = DateTime.now();
-        _logLocalEvent(orderNumber, 'order_accepted', 'staff', 'Accepted with prep time $prepTimeMinutes mins');
-      }
-      return o;
-    }
+      await http.patch(
+        Uri.parse('/api/orders/$orderNumber'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'action': 'accept',
+          'prepTimeMinutes': prepTimeMinutes,
+        }),
+      ).timeout(const Duration(seconds: 3));
+    } catch (_) {}
+
+    return o;
   }
 
   Future<OrderRecord?> rejectOrder(String orderNumber, String reason) async {
-    if (_hasCheckedServer && !_serverOnline) {
-      final o = _orders[orderNumber];
-      if (o != null) {
-        o.status = 'rejected';
-        o.rejectionReason = reason;
-        o.updatedAt = DateTime.now();
-        _logLocalEvent(orderNumber, 'order_rejected', 'staff', 'Rejected: $reason. Auto-refund initiated.');
-      }
-      return o;
+    final o = _orders[orderNumber];
+    if (o != null) {
+      o.status = 'rejected';
+      o.rejectionReason = reason;
+      o.updatedAt = DateTime.now();
+      _logLocalEvent(orderNumber, 'order_rejected', 'staff', 'Rejected: $reason. Auto-refund initiated.');
     }
+
     try {
-      final res = await client.admin.rejectOrder(orderNumber, reason).timeout(const Duration(milliseconds: 350));
-      _serverOnline = true;
-      _hasCheckedServer = true;
-      return res;
-    } catch (_) {
-      _serverOnline = false;
-      _hasCheckedServer = true;
-      final o = _orders[orderNumber];
-      if (o != null) {
-        o.status = 'rejected';
-        o.rejectionReason = reason;
-        o.updatedAt = DateTime.now();
-        _logLocalEvent(orderNumber, 'order_rejected', 'staff', 'Rejected: $reason. Auto-refund initiated.');
-      }
-      return o;
+      await http.patch(
+        Uri.parse('/api/orders/$orderNumber'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'action': 'reject',
+          'rejectionReason': reason,
+        }),
+      ).timeout(const Duration(seconds: 3));
+    } catch (_) {}
+
+    if (o != null && o.totalPaise > 0) {
+      await refundOrder(
+        orderNumber: orderNumber,
+        amountPaise: o.totalPaise,
+        reason: 'Order rejected by shop: $reason',
+      );
     }
+
+    return o;
   }
 
   Future<OrderRecord?> markReady(String orderNumber) async {
-    if (_hasCheckedServer && !_serverOnline) {
-      final o = _orders[orderNumber];
-      if (o != null) {
-        o.status = 'ready_for_pickup';
-        o.packingChecklistConfirmed = true;
-        o.updatedAt = DateTime.now();
-        _logLocalEvent(orderNumber, 'order_ready', 'staff', 'Packaging verified and ready for delivery');
-      }
-      return o;
+    final o = _orders[orderNumber];
+    if (o != null) {
+      o.status = 'ready_for_pickup';
+      o.packingChecklistConfirmed = true;
+      o.updatedAt = DateTime.now();
+      _logLocalEvent(orderNumber, 'order_ready', 'staff', 'Packaging verified and ready for delivery');
     }
+
     try {
-      final res = await client.admin.markReady(orderNumber).timeout(const Duration(milliseconds: 350));
-      _serverOnline = true;
-      _hasCheckedServer = true;
-      return res;
-    } catch (_) {
-      _serverOnline = false;
-      _hasCheckedServer = true;
-      final o = _orders[orderNumber];
-      if (o != null) {
-        o.status = 'ready_for_pickup';
-        o.packingChecklistConfirmed = true;
-        o.updatedAt = DateTime.now();
-        _logLocalEvent(orderNumber, 'order_ready', 'staff', 'Packaging verified and ready for delivery');
-      }
-      return o;
-    }
+      await http.patch(
+        Uri.parse('/api/orders/$orderNumber'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'action': 'mark_ready'}),
+      ).timeout(const Duration(seconds: 3));
+    } catch (_) {}
+
+    return o;
   }
 
   Future<OrderRecord?> assignDelivery({
@@ -552,184 +588,168 @@ class ApiService {
     bool manualFallback = false,
     String? notes,
   }) async {
-    if (_hasCheckedServer && !_serverOnline) {
-      final o = _orders[orderNumber];
-      if (o != null) {
-        o.status = 'out_for_delivery';
-        o.updatedAt = DateTime.now();
-        _deliveryJobs[orderNumber] = DeliveryJob(
-          orderNumber: orderNumber,
-          provider: provider,
-          externalId: 'DEL-${DateTime.now().millisecondsSinceEpoch}',
-          quotePaise: o.deliveryFeePaise,
-          status: 'assigned',
-          trackingUrl: trackingUrl,
-          riderName: riderName,
-          riderPhone: riderPhone,
-          manualFallback: manualFallback,
-          notes: notes,
-          updatedAt: DateTime.now(),
-        );
-        _logLocalEvent(orderNumber, 'delivery_dispatched', 'staff', 'Dispatched via $provider');
-      }
-      return o;
+    final o = _orders[orderNumber];
+    if (o != null) {
+      o.status = 'out_for_delivery';
+      o.updatedAt = DateTime.now();
+      _deliveryJobs[orderNumber] = DeliveryJob(
+        orderNumber: orderNumber,
+        provider: provider,
+        externalId: 'DEL-${DateTime.now().millisecondsSinceEpoch}',
+        quotePaise: o.deliveryFeePaise,
+        status: 'assigned',
+        trackingUrl: trackingUrl,
+        riderName: riderName,
+        riderPhone: riderPhone,
+        manualFallback: manualFallback,
+        notes: notes,
+        updatedAt: DateTime.now(),
+      );
+      _logLocalEvent(orderNumber, 'delivery_dispatched', 'staff', 'Dispatched via $provider');
     }
+
     try {
-      final res = await client.admin.assignDelivery(
-        orderNumber,
-        provider,
-        riderName,
-        riderPhone,
-        trackingUrl,
-        manualFallback,
-        notes,
-      ).timeout(const Duration(milliseconds: 350));
-      _serverOnline = true;
-      _hasCheckedServer = true;
-      return res;
-    } catch (_) {
-      _serverOnline = false;
-      _hasCheckedServer = true;
-      final o = _orders[orderNumber];
-      if (o != null) {
-        o.status = 'out_for_delivery';
-        o.updatedAt = DateTime.now();
-        _deliveryJobs[orderNumber] = DeliveryJob(
-          orderNumber: orderNumber,
-          provider: provider,
-          externalId: 'DEL-${DateTime.now().millisecondsSinceEpoch}',
-          quotePaise: o.deliveryFeePaise,
-          status: 'assigned',
-          trackingUrl: trackingUrl,
-          riderName: riderName,
-          riderPhone: riderPhone,
-          manualFallback: manualFallback,
-          notes: notes,
-          updatedAt: DateTime.now(),
-        );
-        _logLocalEvent(orderNumber, 'delivery_dispatched', 'staff', 'Dispatched via $provider');
-      }
-      return o;
-    }
+      await http.patch(
+        Uri.parse('/api/orders/$orderNumber'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'action': 'assign_delivery',
+          'deliveryProvider': provider,
+          'riderName': riderName,
+          'riderPhone': riderPhone,
+          'trackingUrl': trackingUrl,
+        }),
+      ).timeout(const Duration(seconds: 3));
+    } catch (_) {}
+
+    return o;
   }
 
   Future<OrderRecord?> markDelivered(String orderNumber) async {
-    if (_hasCheckedServer && !_serverOnline) {
-      final o = _orders[orderNumber];
-      if (o != null) {
-        o.status = 'delivered';
-        o.updatedAt = DateTime.now();
-        _logLocalEvent(orderNumber, 'order_delivered', 'delivery_partner', 'Delivered');
-      }
-      return o;
+    final o = _orders[orderNumber];
+    if (o != null) {
+      o.status = 'delivered';
+      o.updatedAt = DateTime.now();
+      _logLocalEvent(orderNumber, 'order_delivered', 'delivery_partner', 'Delivered');
     }
+
     try {
-      final res = await client.admin.markDelivered(orderNumber).timeout(const Duration(milliseconds: 350));
-      _serverOnline = true;
-      _hasCheckedServer = true;
-      return res;
-    } catch (_) {
-      _serverOnline = false;
-      _hasCheckedServer = true;
-      final o = _orders[orderNumber];
-      if (o != null) {
-        o.status = 'delivered';
-        o.updatedAt = DateTime.now();
-        _logLocalEvent(orderNumber, 'order_delivered', 'delivery_partner', 'Delivered');
-      }
-      return o;
-    }
+      await http.patch(
+        Uri.parse('/api/orders/$orderNumber'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'action': 'complete'}),
+      ).timeout(const Duration(seconds: 3));
+    } catch (_) {}
+
+    return o;
   }
 
   Future<OrderRecord?> cancelOrder(String orderNumber, String reason) async {
-    if (_hasCheckedServer && !_serverOnline) {
-      final o = _orders[orderNumber];
-      if (o != null) {
-        o.status = 'rejected';
-        o.rejectionReason = 'Cancelled: $reason';
-        o.updatedAt = DateTime.now();
-        _logLocalEvent(orderNumber, 'order_cancelled', 'customer', 'Cancelled by customer: $reason');
-      }
-      return o;
+    final o = _orders[orderNumber];
+    if (o != null) {
+      o.status = 'rejected';
+      o.rejectionReason = 'Cancelled: $reason';
+      o.updatedAt = DateTime.now();
+      _logLocalEvent(orderNumber, 'order_cancelled', 'customer', 'Cancelled by customer: $reason');
     }
+
     try {
-      final res = await client.order.cancelOrder(orderNumber, reason).timeout(const Duration(milliseconds: 350));
-      _serverOnline = true;
-      _hasCheckedServer = true;
-      return res;
-    } catch (_) {
-      _serverOnline = false;
-      _hasCheckedServer = true;
-      final o = _orders[orderNumber];
-      if (o != null) {
-        o.status = 'rejected';
-        o.rejectionReason = 'Cancelled: $reason';
-        o.updatedAt = DateTime.now();
-        _logLocalEvent(orderNumber, 'order_cancelled', 'customer', 'Cancelled by customer: $reason');
-      }
-      return o;
-    }
+      await http.patch(
+        Uri.parse('/api/orders/$orderNumber'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'action': 'reject',
+          'rejectionReason': 'Cancelled: $reason',
+        }),
+      ).timeout(const Duration(seconds: 3));
+    } catch (_) {}
+
+    return o;
   }
 
   Future<List<OrderEvent>> getOrderEvents(String orderNumber) async {
-    if (_hasCheckedServer && !_serverOnline) {
-      return _orderEvents[orderNumber] ?? [];
-    }
-    try {
-      final res = await client.admin.getOrderEvents(orderNumber).timeout(const Duration(milliseconds: 350));
-      _serverOnline = true;
-      _hasCheckedServer = true;
-      return res;
-    } catch (_) {
-      _serverOnline = false;
-      _hasCheckedServer = true;
-      return _orderEvents[orderNumber] ?? [];
-    }
+    return _orderEvents[orderNumber] ?? [];
   }
 
   Future<OrderRecord?> completeOrder(String orderNumber) async {
-    if (_hasCheckedServer && !_serverOnline) {
-      final o = _orders[orderNumber];
-      if (o != null) {
-        o.status = 'completed';
-        o.updatedAt = DateTime.now();
-        if (o.invoiceId == null) {
-          final now = DateTime.now();
-          final suffix = orderNumber.contains('-') ? orderNumber.split('-').last : orderNumber;
-          o.invoiceId = 'INV-DSMW-${now.year}-$suffix';
-          o.invoiceStatus = 'generated';
-          o.invoicePdfUrl = '/api/v1/orders/$orderNumber/invoice';
-          _logLocalEvent(orderNumber, 'invoice_generated', 'system', 'Tax invoice ${o.invoiceId} generated.');
-          _logLocalEvent(orderNumber, 'email_dispatched', 'system', 'Invoice emailed to ${o.customerEmail ?? 'customer'}');
-        }
-        _logLocalEvent(orderNumber, 'order_completed', 'staff', 'Order marked completed');
+    final o = _orders[orderNumber];
+    if (o != null) {
+      o.status = 'completed';
+      o.updatedAt = DateTime.now();
+      if (o.invoiceId == null) {
+        final now = DateTime.now();
+        final suffix = orderNumber.contains('-') ? orderNumber.split('-').last : orderNumber;
+        o.invoiceId = 'INV-DSMW-${now.year}-$suffix';
+        o.invoiceStatus = 'generated';
+        o.invoicePdfUrl = '/api/orders/$orderNumber/invoice';
       }
-      return o;
+      _logLocalEvent(orderNumber, 'invoice_generated', 'system', 'Tax invoice ${o.invoiceId} generated.');
+      _logLocalEvent(orderNumber, 'order_completed', 'staff', 'Order marked completed');
     }
+
     try {
-      final res = await client.admin.completeOrder(orderNumber).timeout(const Duration(milliseconds: 350));
-      _serverOnline = true;
-      _hasCheckedServer = true;
-      return res;
-    } catch (_) {
-      _serverOnline = false;
-      _hasCheckedServer = true;
-      final o = _orders[orderNumber];
-      if (o != null) {
-        o.status = 'completed';
-        o.updatedAt = DateTime.now();
-        if (o.invoiceId == null) {
-          final now = DateTime.now();
-          final suffix = orderNumber.contains('-') ? orderNumber.split('-').last : orderNumber;
-          o.invoiceId = 'INV-DSMW-${now.year}-$suffix';
-          o.invoiceStatus = 'generated';
-          o.invoicePdfUrl = '/api/v1/orders/$orderNumber/invoice';
-          _logLocalEvent(orderNumber, 'invoice_generated', 'system', 'Tax invoice ${o.invoiceId} generated.');
-          _logLocalEvent(orderNumber, 'email_dispatched', 'system', 'Invoice emailed to ${o.customerEmail ?? 'customer'}');
+      await http.patch(
+        Uri.parse('/api/orders/$orderNumber'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'action': 'complete'}),
+      ).timeout(const Duration(seconds: 3));
+    } catch (_) {}
+
+    sendTaxInvoice(orderNumber);
+
+    return o;
+  }
+
+  /// Authoritative Cashfree Refund caller for Outlet Console
+  Future<Map<String, dynamic>> refundOrder({
+    required String orderNumber,
+    required int amountPaise,
+    required String reason,
+  }) async {
+    final o = _orders[orderNumber];
+    try {
+      final resp = await http.post(
+        Uri.parse('/api/refund-payment'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'order_id': orderNumber,
+          'refund_amount': amountPaise / 100.0,
+          'refund_note': reason,
+        }),
+      ).timeout(const Duration(seconds: 6));
+
+      if (resp.statusCode >= 200 && resp.statusCode < 300) {
+        final data = jsonDecode(resp.body) as Map<String, dynamic>;
+        if (o != null) {
+          o.status = 'refunded';
+          o.updatedAt = DateTime.now();
+          _logLocalEvent(orderNumber, 'payment_refunded', 'staff', 'Cashfree refund of ${AppTheme.formatPaise(amountPaise)} processed: $reason');
         }
-        _logLocalEvent(orderNumber, 'order_completed', 'staff', 'Order marked completed');
+        return {'success': true, 'data': data};
+      } else {
+        final err = jsonDecode(resp.body);
+        return {'success': false, 'error': err['error'] ?? err['message'] ?? 'Refund failed [${resp.statusCode}]'};
       }
-      return o;
+    } catch (e) {
+      return {'success': false, 'error': e.toString()};
+    }
+  }
+
+  /// Sends GST Tax Invoice directly to customer_email
+  Future<bool> sendTaxInvoice(String orderNumber) async {
+    final o = _orders[orderNumber];
+    try {
+      final resp = await http.post(
+        Uri.parse('/api/send-invoice'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'order_id': orderNumber,
+          if (o != null) 'order': o.toJson(),
+        }),
+      ).timeout(const Duration(seconds: 5));
+      return resp.statusCode == 200;
+    } catch (_) {
+      return false;
     }
   }
 
